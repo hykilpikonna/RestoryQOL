@@ -15,6 +15,7 @@ Just made this mod to make the game faster-paced using some QoL improvements (an
 * Highlight missing parts in part store page
 * Reset the competition timer when a competition attempt fails
 * Ultrasonic cleaner finishes instantly
+* Block the ad banners on the in-game browser's shop pages
 
 **Cheats**
 

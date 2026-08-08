@@ -28,6 +28,7 @@ namespace RestoryQOL
         public static MelonPreferences_Entry<bool> AutoRotateToScrew;
         public static MelonPreferences_Entry<bool> ResetTimerOnFail;
         public static MelonPreferences_Entry<bool> InstantUltrasonic;
+        public static MelonPreferences_Entry<bool> AdBlock;
 
         #endregion
 
@@ -58,6 +59,7 @@ namespace RestoryQOL
             AutoRotateToScrew    = Category.CreateEntry("AutoRotateToScrew",    true,  "Up to 90 degrees of device auto-rotation when navigating");
             ResetTimerOnFail     = Category.CreateEntry("ResetTimerOnFail",     true,  "Reset competition timer when a competition attempt fails");
             InstantUltrasonic    = Category.CreateEntry("InstantUltrasonic",    true,  "Ultrasonic cleaner finishes instantly");
+            AdBlock              = Category.CreateEntry("AdBlock",              true,  "Hide cross-promo ad banners on browser shop pages");
             Category.SaveToFile(false);
 
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InfinityMoney));
@@ -68,6 +70,7 @@ namespace RestoryQOL
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsShopPatches));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.ResetTimerOnFail));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InstantUltrasonic));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.AdBlock));
 
             _visible = MenuEnabled.Value;
             LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");
@@ -108,6 +111,7 @@ namespace RestoryQOL
             HighlightMissingParts.Value = GUILayout.Toggle(HighlightMissingParts.Value, " Highlight missing parts");
             ResetTimerOnFail.Value = GUILayout.Toggle(ResetTimerOnFail.Value, " Reset competition timer on fail");
             InstantUltrasonic.Value = GUILayout.Toggle(InstantUltrasonic.Value, " Ultrasonic cleaner finishes instantly");
+            AdBlock.Value = GUILayout.Toggle(AdBlock.Value, " Block ad banners on shop pages");
 
             GUILayout.Space(8f);
             GUILayout.Label("--- Bug Fix ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
