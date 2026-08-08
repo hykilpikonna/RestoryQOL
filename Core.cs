@@ -21,6 +21,11 @@ namespace RestoryQOL
         public static MelonPreferences_Entry<bool> FixSaveHang;
         public static MelonPreferences_Entry<bool> SaveFeedback;
         public static MelonPreferences_Entry<bool> AutoPartsPage;
+        public static MelonPreferences_Entry<bool> SortPartsByNotebook;
+        public static MelonPreferences_Entry<bool> HighlightMissingParts;
+        public static MelonPreferences_Entry<bool> AutoNextScrew;
+        public static MelonPreferences_Entry<bool> AutoNextScrewHole;
+        public static MelonPreferences_Entry<bool> AutoRotateToScrew;
 
         #endregion
 
@@ -45,12 +50,19 @@ namespace RestoryQOL
             FixSaveHang = Category.CreateEntry("FixSaveHang", true, "Fix save hang (skip texture conversion wait)");
             SaveFeedback = Category.CreateEntry("SaveFeedback", true, "Show 'Saving...' text when saving");
             AutoPartsPage = Category.CreateEntry("AutoPartsPage", true, "Auto-open parts page for placed device");
+            SortPartsByNotebook = Category.CreateEntry("SortPartsByNotebook", true, "Sort the parts shop to match the notebook's part order");
+            HighlightMissingParts = Category.CreateEntry("HighlightMissingParts", false, "Highlight parts missing from the current device");
+            AutoNextScrew = Category.CreateEntry("AutoNextScrew", true, "Hold SHIFT to jump to the next screw to unscrew");
+            AutoNextScrewHole = Category.CreateEntry("AutoNextScrewHole", true, "Hold CTRL to jump to the next empty screw hole");
+            AutoRotateToScrew = Category.CreateEntry("AutoRotateToScrew", true, "Up to 90 degrees of device auto-rotation when navigating");
             Category.SaveToFile(false);
 
             var harmony = new HarmonyLib.Harmony("RestoryQOL");
             Patches.Apply(harmony);
             SaveFixPatches.Apply(harmony);
             PartsPagePatches.Apply(harmony);
+            PartsShopPatches.Apply(harmony);
+            ScrewNavigationPatches.Apply(harmony);
 
             _visible = MenuEnabled.Value;
             LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");
@@ -98,6 +110,14 @@ namespace RestoryQOL
             GUILayout.Space(8f);
             GUILayout.Label("--- Workflow ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             AutoPartsPage.Value = GUILayout.Toggle(AutoPartsPage.Value, " Auto-open parts for placed device");
+            SortPartsByNotebook.Value = GUILayout.Toggle(SortPartsByNotebook.Value, " Sort parts shop to notebook order");
+            HighlightMissingParts.Value = GUILayout.Toggle(HighlightMissingParts.Value, " Highlight missing parts");
+
+            GUILayout.Space(8f);
+            GUILayout.Label("--- Screw Navigation ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
+            AutoNextScrew.Value = GUILayout.Toggle(AutoNextScrew.Value, " Hold SHIFT: jump to next screw to unscrew");
+            AutoNextScrewHole.Value = GUILayout.Toggle(AutoNextScrewHole.Value, " Hold CTRL: jump to next empty screw hole");
+            AutoRotateToScrew.Value = GUILayout.Toggle(AutoRotateToScrew.Value, " Auto-rotate device (up to 90°) when jumping");
 
             GUILayout.EndVertical();
 

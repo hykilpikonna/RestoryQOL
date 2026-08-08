@@ -1,0 +1,351 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using HarmonyLib;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace RestoryQOL
+{
+    public static class PartsShopPatches
+    {
+        // Searched fields on the filter's view (NOT reliably present in all builds).
+        private const string SelectedDeviceCategoryIndexField = "SelectedDeviceCategoryIndex";
+        private const string SelectedModelIndexField = "SelectedModelIndex";
+        private const string IsSortToggleOnField = "IsSortToggleOn";
+
+        private static Type _elementsShopPageType;
+        private static Type _elementsShopProductsPanelType;
+        private static Type _elementsShopProductsPanelFilterType;
+        private static Type _elementsShopElementType;
+        private static Type _productPanelViewType;
+        private static Type _deviceInfoType;
+        private static Type _elementInfoType;
+        private static Type _elementCategoryType;
+        private static Type _deviceServiceType;
+        private static Type _workSurfaceType;
+        private static Type _placedElementsType;
+        private static Type _elementTransformRecordType;
+
+        private static bool _resolved;
+        private static bool _resolveFailed;
+
+        public static void Apply(HarmonyLib.Harmony harmony)
+        {
+            var gameAsm = typeof(Restory.Gameplay.Inventory.Wallet).Assembly;
+
+            _elementsShopPageType = gameAsm.GetType("Restory.UI.Presenters.Shops.Elements.GUI_ElementsShopPage");
+            _elementsShopProductsPanelType = gameAsm.GetType("Restory.UI.Presenters.Shops.Elements.GUI_ElementsShopProductsPanel");
+            _elementsShopProductsPanelFilterType = gameAsm.GetType("Restory.UI.Presenters.Shops.Elements.GUI_ElementsShopProductsPanelFilter");
+            _elementsShopElementType = gameAsm.GetType("Restory.UI.Presenters.Shops.Elements.GUI_ElementsShopElement");
+            _productPanelViewType = gameAsm.GetType("Restory.UI.Views.Shops.Elements.GUI_ElementsShopProductsPanelView");
+            _deviceInfoType = gameAsm.GetType("Restory.Data.Devices.DeviceInfo");
+            _elementInfoType = gameAsm.GetType("Restory.Data.Elements.ElementInfo");
+            _elementCategoryType = gameAsm.GetType("Restory.Data.Elements.ElementCategory");
+            _deviceServiceType = gameAsm.GetType("Restory.Gameplay.Devices.DeviceService");
+            _workSurfaceType = gameAsm.GetType("Restory.Gameplay.Workplace.WorkSurface");
+            _placedElementsType = gameAsm.GetType("Restory.Gameplay.Elements.PlacedElements");
+            _elementTransformRecordType = gameAsm.GetType("Restory.Gameplay.Elements.ElementTransformRecord");
+
+            _resolved = _elementsShopPageType != null && _elementsShopProductsPanelType != null &&
+                        _elementsShopProductsPanelFilterType != null && _elementsShopElementType != null &&
+                        _productPanelViewType != null && _deviceInfoType != null && _elementInfoType != null &&
+                        _elementCategoryType != null && _deviceServiceType != null && _workSurfaceType != null &&
+                        _placedElementsType != null && _elementTransformRecordType != null;
+            _resolveFailed = !_resolved;
+
+            if (!_resolved)
+            {
+                Core.Instance.LoggerInstance.Warning("[PartsShop] One or more game types not found; feature disabled.");
+                return;
+            }
+
+            var showMethod = AccessTools.Method(_elementsShopPageType, "Show");
+            if (showMethod == null)
+            {
+                Core.Instance.LoggerInstance.Warning("[PartsShop] Could not find GUI_ElementsShopPage.Show; feature disabled.");
+                return;
+            }
+            harmony.Patch(showMethod, postfix: new HarmonyMethod(typeof(PartsShopPatches), nameof(ElementsShopPageShow_Postfix)));
+            Core.Instance.LoggerInstance.Msg("[PartsShop] GUI_ElementsShopPage.Show patched (postfix).");
+        }
+
+        public static void ElementsShopPageShow_Postfix(object __instance)
+        {
+            if (!_resolved || _resolveFailed) return;
+
+            try
+            {
+                var log = Core.Instance.LoggerInstance;
+
+                // Only act when the parts page is in ProductsSelection mode.
+                var pageState = Traverse.Create(__instance).Property("CurrentState").GetValue();
+                if (pageState == null) return;
+                var productsSelectionValue = Enum.Parse(pageState.GetType(), "ProductsSelection");
+                if (!Equals(pageState, productsSelectionValue)) return;
+
+                var panel = Traverse.Create(__instance).Property("ProductsPanel").GetValue();
+                if (panel == null) return;
+
+                var filter = Traverse.Create(panel).Property("Filter").GetValue();
+                if (filter == null) return;
+
+                var filterTraverse = Traverse.Create(filter);
+
+                // The currently placed (working) device. This is the same lookup the
+                // mod's existing AutoPartsPage feature performs.
+                var deviceService = UnityEngine.Object.FindObjectOfType(_deviceServiceType);
+                if (deviceService == null) return;
+                var container = Traverse.Create(deviceService).Property("PlacedDeviceContainer").GetValue();
+                if (container == null) return;
+                var device = Traverse.Create(container).Property("Device").GetValue();
+                if (device == null) return;
+                var deviceInfo = Traverse.Create(device).Property("Info").GetValue();
+                if (deviceInfo == null || !_deviceInfoType.IsInstanceOfType(deviceInfo)) return;
+
+                // Notebook order: DeviceInfo.Elements in source order.
+                var elementsProp = Traverse.Create(deviceInfo).Property("Elements");
+                var deviceOrderedParts = new List<object>();
+                foreach (var element in (IEnumerable)elementsProp.GetValue())
+                {
+                    if (element != null)
+                        deviceOrderedParts.Add(element);
+                }
+
+                var panelView = Traverse.Create(panel).Field("view").GetValue();
+                if (panelView == null || !_productPanelViewType.IsInstanceOfType(panelView)) return;
+                var productsListParent = Traverse.Create(panelView).Field("productsListParent").GetValue() as RectTransform;
+                if (productsListParent == null) return;
+
+                // Is this a single-device (model) view? If so the filtered list maps
+                // one-to-one to the device's ordered parts.
+                var filterView = filterTraverse.Field("view").GetValue();
+                if (filterView == null) return;
+                var modelCount = GetCountOfIList(filterTraverse.Field("deviceModels").GetValue());
+                var isSingleDevice = modelCount == 1;
+
+                HashSet<object> missingElements = null;
+                if (Core.HighlightMissingParts.Value)
+                    missingElements = CollectMissingElements(container, device);
+
+                if (Core.SortPartsByNotebook.Value && isSingleDevice && modelCount == 1)
+                {
+                    SortProductsToNotebookOrder(productsListParent, filter, deviceOrderedParts);
+                }
+
+                if (missingElements != null && missingElements.Count > 0)
+                {
+                    HighlightMissingProducts(productsListParent, filter, missingElements);
+                }
+            }
+            catch (Exception ex)
+            {
+                Core.Instance.LoggerInstance.Warning($"[PartsShop] {ex}");
+            }
+        }
+
+        /// <summary>
+        /// Reorders the shop product rows under productsListParent so that parts
+        /// appear in the same order as the notebook (DeviceInfo.Elements).
+        /// Items that are not part of the current device keep the original
+        /// (price-sorted) relative order and are appended at the end.
+        /// </summary>
+        private static void SortProductsToNotebookOrder(
+            RectTransform productsListParent,
+            object filter,
+            List<object> deviceOrderedParts)
+        {
+            var filteredItems = Traverse.Create(filter).Property("FilteredElementInfos").GetValue() as IList;
+            if (filteredItems == null) return;
+
+            var indexOfPart = new Dictionary<object, int>();
+            for (var i = 0; i < deviceOrderedParts.Count; i++)
+                indexOfPart[deviceOrderedParts[i]] = i;
+
+            // Collect the shop item transforms in display order.
+            var itemTransforms = new List<Transform>();
+            for (var i = 0; i < productsListParent.childCount; i++)
+            {
+                var child = productsListParent.GetChild(i);
+                if (child != null && child.GetComponent(_elementsShopElementType) != null)
+                    itemTransforms.Add(child);
+            }
+            if (itemTransforms.Count == 0) return;
+
+            // Map each shop item to its part's order key; -1 = not in device.
+            var orderAndIndex = new List<KeyValuePair<int, int>>(itemTransforms.Count);
+            for (var i = 0; i < itemTransforms.Count; i++)
+            {
+                var element = itemTransforms[i].GetComponent(_elementsShopElementType);
+                if (element == null) { orderAndIndex.Add(new KeyValuePair<int, int>(-1, i)); continue; }
+                var shopItemData = Traverse.Create(element).Property("ShopItemData").GetValue();
+                var partInfo = shopItemData == null ? null : Traverse.Create(shopItemData).Field("Element").GetValue();
+                int order;
+                orderAndIndex.Add(partInfo != null && indexOfPart.TryGetValue(partInfo, out order)
+                    ? new KeyValuePair<int, int>(order, i)
+                    : new KeyValuePair<int, int>(-1, i));
+            }
+
+            // Stable sort: parts in notebook order first, then unmatched items
+            // in their original (price-sorted) order.
+            orderAndIndex.Sort((a, b) =>
+            {
+                if (a.Key != b.Key)
+                {
+                    if (a.Key == -1) return 1;
+                    if (b.Key == -1) return -1;
+                    return a.Key.CompareTo(b.Key);
+                }
+                return a.Value.CompareTo(b.Value);
+            });
+
+            // Re-sibling in the new order (SetAsLastSibling preserves layout order).
+            for (var i = 0; i < orderAndIndex.Count; i++)
+                itemTransforms[orderAndIndex[i].Value].SetAsLastSibling();
+        }
+
+        /// <summary>
+        /// Computes the set of ElementInfo objects that the notebook would mark
+        /// "missing": an empty socket with no matching element currently lying on
+        /// the work surface.
+        /// </summary>
+        private static HashSet<object> CollectMissingElements(object container, object device)
+        {
+            var missing = new HashSet<object>();
+
+            var socketList = Traverse.Create(device).Property("SortedSockets").GetValue() as IList;
+            if (socketList == null) return missing;
+
+            // Elements currently on the surface (workSurface.PlacedElements or the
+            // dismantled pack's PlacedElements), mirroring the notebook's logic.
+            var surfaceElements = new List<object>();
+            var parentObj = container as UnityEngine.Object;
+            if (parentObj == null) return missing;
+            var parentTransform = (parentObj as Component)?.transform;
+            if (parentTransform == null) return missing;
+            var dismantledPackType = parentTransform.GetComponent("DismantledDevicePack");
+            if (dismantledPackType != null)
+            {
+                var packed = Traverse.Create(dismantledPackType).Property("PlacedElements").GetValue();
+                AddSurfaceElementsFromPlaced(packed, surfaceElements);
+            }
+            else
+            {
+                var workSurface = UnityEngine.Object.FindObjectOfType(_workSurfaceType);
+                if (workSurface != null)
+                {
+                    var placed = Traverse.Create(workSurface).Property("PlacedElements").GetValue() as IEnumerable;
+                    if (placed != null)
+                    {
+                        foreach (var element in placed)
+                        {
+                            if (element != null)
+                                surfaceElements.Add(element);
+                        }
+                    }
+                }
+            }
+
+            for (var i = 0; i < socketList.Count; i++)
+            {
+                var socket = socketList[i];
+                if (socket == null) continue;
+                var socketTraverse = Traverse.Create(socket);
+                var nested = socketTraverse.Property("NestedElement").GetValue();
+                var compatible = socketTraverse.Property("CompatibleElementInfo").GetValue();
+                if (nested != null || compatible == null) continue;
+
+                var compatibleInfo = compatible;
+                var hasSurfaceReplacement = false;
+                foreach (var surfaceElement in surfaceElements)
+                {
+                    if (surfaceElement == null) continue;
+                    var info = Traverse.Create(surfaceElement).Property("Info").GetValue();
+                    if (info != null && ReferenceEquals(info, compatibleInfo))
+                    {
+                        hasSurfaceReplacement = true;
+                        break;
+                    }
+                }
+                if (!hasSurfaceReplacement)
+                    missing.Add(compatibleInfo);
+            }
+
+            return missing;
+        }
+
+        private static void AddSurfaceElementsFromPlaced(object placedElements, List<object> surfaceElements)
+        {
+            if (placedElements == null || !_placedElementsType.IsInstanceOfType(placedElements))
+                return;
+            var elementsOnSurface = Traverse.Create(placedElements).Property("ElementsOnSurface").GetValue() as IEnumerable;
+            if (elementsOnSurface == null) return;
+            foreach (var record in elementsOnSurface)
+            {
+                if (record == null) continue;
+                var element = Traverse.Create(record).Field("Element").GetValue();
+                if (element != null)
+                    surfaceElements.Add(element);
+            }
+        }
+
+        /// <summary>
+        /// Adds a semi-transparent tint overlay on top of each shop product row
+        /// whose part is in the missing set.
+        /// </summary>
+        private static void HighlightMissingProducts(
+            RectTransform productsListParent,
+            object filter,
+            HashSet<object> missingElements)
+        {
+            var filteredItems = Traverse.Create(filter).Property("FilteredElementInfos").GetValue() as IList;
+            if (filteredItems == null) return;
+
+            for (var i = 0; i < productsListParent.childCount; i++)
+            {
+                var child = productsListParent.GetChild(i);
+                if (child == null) continue;
+                var element = child.GetComponent(_elementsShopElementType);
+                if (element == null) continue;
+                var shopItemData = Traverse.Create(element).Property("ShopItemData").GetValue();
+                var partInfo = shopItemData == null ? null : Traverse.Create(shopItemData).Field("Element").GetValue();
+                if (partInfo == null) continue;
+                SetMissingOverlay(child, missingElements.Contains(partInfo));
+            }
+        }
+
+        private static void SetMissingOverlay(Transform productRow, bool isMissing)
+        {
+            const string overlayName = "RestoryQOL_MissingHighlight";
+            var containerTransform = productRow as RectTransform;
+            if (containerTransform == null) return;
+
+            var overlay = containerTransform.Find(overlayName);
+            if (isMissing)
+            {
+                if (overlay != null) return;
+                var go = new GameObject(overlayName, typeof(RectTransform), typeof(Image));
+                go.transform.SetParent(productRow, false);
+                var rect = go.GetComponent<RectTransform>();
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
+                var img = go.GetComponent<Image>();
+                img.color = new Color(1f, 0.35f, 0.2f, 0.18f);
+                img.raycastTarget = false;
+            }
+            else if (overlay != null)
+            {
+                UnityEngine.Object.Destroy(overlay.gameObject);
+            }
+        }
+
+        private static int GetCountOfIList(object value)
+        {
+            if (value is IList list) return list.Count;
+            if (value is ICollection collection) return collection.Count;
+            return -1;
+        }
+    }
+}
