@@ -18,12 +18,14 @@ namespace RestoryQOL
         public static MelonPreferences_Entry<bool> InfinityMoney;
         public static MelonPreferences_Entry<bool> FakeMoneyUI;
         public static MelonPreferences_Entry<bool> SkipLogos;
+        public static MelonPreferences_Entry<bool> FixSaveHang;
+        public static MelonPreferences_Entry<bool> SaveFeedback;
 
         #endregion
 
         #region UI State
 
-        private Rect _windowRect = new Rect(20f, 80f, 340f, 320f);
+        private Rect _windowRect = new Rect(20f, 80f, 340f, 420f);
         private bool _visible = true;
         private bool _dragging;
         private int _windowId = 266622;
@@ -39,10 +41,13 @@ namespace RestoryQOL
             InfinityMoney = Category.CreateEntry("InfinityMoney", true, "Bypass wallet deduction on purchase");
             FakeMoneyUI = Category.CreateEntry("FakeMoneyUI", true, "Fake unlimited money for UI checks");
             SkipLogos = Category.CreateEntry("SkipLogos", true, "Skip startup logos");
+            FixSaveHang = Category.CreateEntry("FixSaveHang", true, "Fix save hang (skip texture conversion wait)");
+            SaveFeedback = Category.CreateEntry("SaveFeedback", true, "Show 'Saving...' text when saving");
             Category.SaveToFile(false);
 
             var harmony = new HarmonyLib.Harmony("RestoryQOL");
             Patches.Apply(harmony);
+            SaveFixPatches.Apply(harmony);
 
             _visible = MenuEnabled.Value;
             LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");
@@ -81,6 +86,11 @@ namespace RestoryQOL
             GUILayout.Space(8f);
             GUILayout.Label("--- Interface ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             MenuEnabled.Value = GUILayout.Toggle(MenuEnabled.Value, " Start with menu open");
+
+            GUILayout.Space(8f);
+            GUILayout.Label("--- Save Fix ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
+            FixSaveHang.Value = GUILayout.Toggle(FixSaveHang.Value, " Fix save hang (skip texture wait)");
+            SaveFeedback.Value = GUILayout.Toggle(SaveFeedback.Value, " Show 'Saving...' feedback");
 
             GUILayout.EndVertical();
 
