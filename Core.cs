@@ -20,6 +20,7 @@ namespace RestoryQOL
         public static MelonPreferences_Entry<bool> SkipLogos;
         public static MelonPreferences_Entry<bool> FixSaveHang;
         public static MelonPreferences_Entry<bool> SaveFeedback;
+        public static MelonPreferences_Entry<bool> AutoPartsPage;
 
         #endregion
 
@@ -43,11 +44,13 @@ namespace RestoryQOL
             SkipLogos = Category.CreateEntry("SkipLogos", true, "Skip startup logos");
             FixSaveHang = Category.CreateEntry("FixSaveHang", true, "Fix save hang (skip texture conversion wait)");
             SaveFeedback = Category.CreateEntry("SaveFeedback", true, "Show 'Saving...' text when saving");
+            AutoPartsPage = Category.CreateEntry("AutoPartsPage", true, "Auto-open parts page for placed device");
             Category.SaveToFile(false);
 
             var harmony = new HarmonyLib.Harmony("RestoryQOL");
             Patches.Apply(harmony);
             SaveFixPatches.Apply(harmony);
+            PartsPagePatches.Apply(harmony);
 
             _visible = MenuEnabled.Value;
             LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");
@@ -91,6 +94,10 @@ namespace RestoryQOL
             GUILayout.Label("--- Save Fix ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             FixSaveHang.Value = GUILayout.Toggle(FixSaveHang.Value, " Fix save hang (skip texture wait)");
             SaveFeedback.Value = GUILayout.Toggle(SaveFeedback.Value, " Show 'Saving...' feedback");
+
+            GUILayout.Space(8f);
+            GUILayout.Label("--- Workflow ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
+            AutoPartsPage.Value = GUILayout.Toggle(AutoPartsPage.Value, " Auto-open parts for placed device");
 
             GUILayout.EndVertical();
 
