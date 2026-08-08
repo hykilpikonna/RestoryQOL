@@ -21,6 +21,7 @@ Just made this mod to make the game faster-paced using some QoL improvements (an
 * Hold ALT while dropping a part to snap it straight into its socket
 * Hold SHIFT while dropping a part to route it by condition: broken to the shredder, dirty to the ultrasonic bath, good to the parts box
 * Hold Z to instantly screw in all visible loose screws, hold X to unscrew them all
+* Ctrl+R to refresh marketplace
 
 **Cheats**
 

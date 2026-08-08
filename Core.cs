@@ -30,6 +30,7 @@ namespace RestoryQOL
         public static MelonPreferences_Entry<bool> AdBlock;
         public static MelonPreferences_Entry<bool> SnapToSocket;
         public static MelonPreferences_Entry<bool> QuickDispose;
+        public static MelonPreferences_Entry<bool> RefreshMarketplace;
 
         #endregion
 
@@ -62,6 +63,7 @@ namespace RestoryQOL
             AdBlock              = Category.CreateEntry("AdBlock",              true,  "Hide cross-promo ad banners on browser shop pages");
             SnapToSocket         = Category.CreateEntry("SnapToSocket",         true,  "Hold ALT to snap a dropped part into its socket");
             QuickDispose         = Category.CreateEntry("QuickDispose",         true,  "Hold SHIFT on drop: broken->shredder, dirty->cleaner, good->parts box");
+            RefreshMarketplace   = Category.CreateEntry("RefreshMarketplace",   true,  "Press CTRL+R to refresh the device shop marketplace");
             Category.SaveToFile(false);
 
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InfinityMoney));
@@ -89,6 +91,7 @@ namespace RestoryQOL
                 LoggerInstance.Msg("[Menu] F8 toggled -> visible: " + _visible);
             }
             Mods.AutoScrew.Run();
+            Mods.RefreshMarketplace.Run();
         }
 
         public override void OnGUI()
@@ -123,6 +126,7 @@ namespace RestoryQOL
             AdBlock.Value = GUILayout.Toggle(AdBlock.Value, " Block ad banners on shop pages");
             SnapToSocket.Value = GUILayout.Toggle(SnapToSocket.Value, " Hold ALT: snap dropped part into socket");
             QuickDispose.Value = GUILayout.Toggle(QuickDispose.Value, " Hold SHIFT on drop: auto-route part by condition");
+            RefreshMarketplace.Value = GUILayout.Toggle(RefreshMarketplace.Value, " CTRL+R: refresh marketplace");
 
             GUILayout.Space(8f);
             GUILayout.Label("--- Bug Fix ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
@@ -146,6 +150,13 @@ namespace RestoryQOL
                 _dragging = true;
             if (Event.current.type == EventType.MouseUp)
                 _dragging = false;
+
+            if (Event.current.type == EventType.Repaint)
+            {
+                Rect last = GUILayoutUtility.GetLastRect();
+                if (last.yMax > 0f)
+                    _windowRect.height = last.yMax + 34f;
+            }
 
             GUI.DragWindow(_windowRect);
         }
