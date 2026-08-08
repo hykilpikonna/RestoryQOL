@@ -196,8 +196,8 @@ namespace RestoryQOL.Mods
 
         /// <summary>
         /// Computes the set of ElementInfo objects that the notebook would mark
-        /// "missing": an empty socket with no matching element currently lying on
-        /// the work surface.
+        /// "missing": empty sockets that cannot all be covered by the matching
+        /// elements currently lying on the work surface (quantity-aware).
         /// </summary>
         private static HashSet<object> CollectMissingElements(object container, object device)
         {
@@ -229,6 +229,22 @@ namespace RestoryQOL.Mods
                 }
             }
 
+            // Count available surface elements per ElementInfo so quantity
+            // matters: one element lying on the surface can only satisfy one
+            // empty socket. Without this, needing 2 of a part while having 1
+            // would not flag the part as missing.
+            var surfaceCounts = new Dictionary<object, int>();
+            foreach (var info in from el in surfaceElements
+                     where el != null
+                     select Traverse.Create(el).Property("Info").GetValue()
+                     into info
+                     where info != null
+                     select info)
+            {
+                surfaceCounts.TryGetValue(info, out var count);
+                surfaceCounts[info] = count + 1;
+            }
+
             foreach (var socket in socketList)
             {
                 if (socket == null) continue;
@@ -237,9 +253,9 @@ namespace RestoryQOL.Mods
                 var compatible = socketTraverse.Property("CompatibleElementInfo").GetValue();
                 if (nested != null || compatible == null) continue;
 
-                var hasSurfaceReplacement = (from el in surfaceElements where el != null 
-                    select Traverse.Create(el).Property("Info").GetValue()).Any(info => info != null && ReferenceEquals(info, compatible));
-                if (!hasSurfaceReplacement)
+                if (surfaceCounts.TryGetValue(compatible, out var available) && available > 0)
+                    surfaceCounts[compatible] = available - 1;
+                else
                     missing.Add(compatible);
             }
 
