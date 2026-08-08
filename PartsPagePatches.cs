@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using Restory.Gameplay.Inventory;
@@ -51,23 +53,18 @@ namespace RestoryQOL
                 if (tabs == null) return;
 
                 var elementsShopPageType = gameAsm.GetType("Restory.UI.Presenters.Shops.Elements.GUI_ElementsShopPage");
-                object partsTab = null;
-                foreach (var tab in tabs)
-                {
-                    var browserPage = Traverse.Create(tab).Property("BrowserPage").GetValue();
-                    if (browserPage != null && elementsShopPageType.IsInstanceOfType(browserPage))
-                    {
-                        partsTab = tab;
-                        break;
-                    }
-                }
+                var partsTab = (
+                    from object tab in tabs let browserPage = Traverse.Create(tab).Property("BrowserPage").GetValue() 
+                    where browserPage != null && elementsShopPageType.IsInstanceOfType(browserPage) 
+                    select tab
+                ).FirstOrDefault();
                 if (partsTab == null) return;
 
-                pageSwitcher.GetType().GetMethod("ResolveTabClick").Invoke(pageSwitcher, new[] { partsTab });
+                pageSwitcher.GetType().GetMethod("ResolveTabClick")?.Invoke(pageSwitcher, [partsTab]);
 
                 var tabBrowserPage = Traverse.Create(partsTab).Property("BrowserPage").GetValue();
                 var shopPanelStateType = gameAsm.GetType("Restory.UI.Presenters.Shops.ShopPanelState");
-                tabBrowserPage.GetType().GetProperty("CurrentState").SetValue(
+                tabBrowserPage.GetType().GetProperty("CurrentState")?.SetValue(
                     tabBrowserPage, Enum.Parse(shopPanelStateType, "ProductsSelection"));
 
                 var productsPanel = Traverse.Create(tabBrowserPage).Property("ProductsPanel").GetValue();
@@ -95,22 +92,18 @@ namespace RestoryQOL
                 }
                 if (!categoryFound) return;
 
-                filter.GetType().GetMethod("SelectCategory", new[] { typeof(int) }).Invoke(filter, new object[] { categoryIndex });
+                filter.GetType().GetMethod("SelectCategory", [typeof(int)])?.Invoke(filter, [categoryIndex]);
 
                 // Also select the specific model in the dropdown
-                var deviceModels = Traverse.Create(filter).Field("deviceModels").GetValue() as System.Collections.IList;
-                if (deviceModels != null && targetModelKey != null)
+                if (Traverse.Create(filter).Field("deviceModels").GetValue() is IList deviceModels && targetModelKey != null)
                 {
                     for (var mi = 0; mi < deviceModels.Count; mi++)
                     {
-                        if ((deviceModels[mi] as string) == targetModelKey)
-                        {
-                            var filterView = Traverse.Create(filter).Field("view").GetValue();
-                            var dropdown = Traverse.Create(filterView).Field("modelsDropdown").GetValue();
-                            if (dropdown != null)
-                                dropdown.GetType().GetProperty("value").SetValue(dropdown, mi);
-                            break;
-                        }
+                        if (deviceModels[mi] as string != targetModelKey) continue;
+                        var filterView = Traverse.Create(filter).Field("view").GetValue();
+                        var dropdown = Traverse.Create(filterView).Field("modelsDropdown").GetValue();
+                        dropdown?.GetType().GetProperty("value")?.SetValue(dropdown, mi);
+                        break;
                     }
                 }
 

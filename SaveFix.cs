@@ -1,8 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using HarmonyLib;
-using Restory.Gameplay.Inventory;
-using UnityEngine;
 
 namespace RestoryQOL
 {
@@ -10,53 +8,22 @@ namespace RestoryQOL
     {
         public static void Apply(HarmonyLib.Harmony harmony)
         {
-            var gameAsm = typeof(Wallet).Assembly;
-
-            // Save hang fix: skip disk space check (DriveInfo.AvailableFreeSpace can block for 20+ seconds)
-            var diskSpaceType = gameAsm.GetType("Restory.Data.SaveLoad.DiskSpaceService");
-            if (diskSpaceType != null)
-            {
-                var isEnough = AccessTools.Method(diskSpaceType, "IsEnoughDiskSpace");
-                harmony.Patch(isEnough, new HarmonyMethod(typeof(SaveFixPatches), nameof(DiskSpacePrefix)));
-                Core.Instance.LoggerInstance.Msg("[SaveFix] DiskSpaceService.IsEnoughDiskSpace");
-            }
-            else
-            {
-                Core.Instance.LoggerInstance.Warning("[SaveFix] DiskSpaceService NOT FOUND");
-            }
-
-            var textureCacheType = gameAsm.GetType("Restory.Gameplay.TextureMasks.TextureCacheService");
-            if (textureCacheType != null)
-            {
-                var waitMethod = AccessTools.Method(textureCacheType, "WaitForAllTexturesConversionCompletion");
-                harmony.Patch(waitMethod, new HarmonyMethod(typeof(SaveFixPatches), nameof(WaitForTexturesPrefix)));
-                Core.Instance.LoggerInstance.Msg("[SaveFix] TextureCacheService.WaitForAllTexturesConversionCompletion");
-            }
-            else
-            {
-                Core.Instance.LoggerInstance.Warning("[SaveFix] TextureCacheService NOT FOUND");
-            }
-
-            var pauseMenuType = gameAsm.GetType("Restory.UI.Presenters.PauseMenu.GUI_PauseMenu");
-            if (pauseMenuType != null)
-            {
-                var resolveSave = AccessTools.Method(pauseMenuType, "ResolveOnSaveGameClick");
-                harmony.Patch(resolveSave, new HarmonyMethod(typeof(SaveFixPatches), nameof(SaveFeedbackPrefix)));
-                Core.Instance.LoggerInstance.Msg("[SaveFix] GUI_PauseMenu.ResolveOnSaveGameClick");
-            }
-            else
-            {
-                Core.Instance.LoggerInstance.Warning("[SaveFix] GUI_PauseMenu NOT FOUND");
-            }
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(SaveFixPatches));
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Restory.Gameplay.TextureMasks.TextureCacheService), "WaitForAllTexturesConversionCompletion")]
         public static bool WaitForTexturesPrefix(ref Task __result)
         {
             if (!Core.FixSaveHang.Value) return true;
             __result = Task.CompletedTask;
             return false;
         }
-
+        
+        /// The game takes 20 seconds to query disk space on my device, so patching it to true.
+        /// Not sure why it exists at all, I don't think people will run out of disk space for saving a game...
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Restory.Data.SaveLoad.DiskSpaceService), "IsEnoughDiskSpace")]
         public static bool DiskSpacePrefix(ref bool __result)
         {
             if (!Core.FixSaveHang.Value) return true;
@@ -64,6 +31,8 @@ namespace RestoryQOL
             return false;
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Restory.UI.Presenters.PauseMenu.GUI_PauseMenu), "ResolveOnSaveGameClick")]
         public static void SaveFeedbackPrefix(object __instance)
         {
             if (!Core.SaveFeedback.Value) return;

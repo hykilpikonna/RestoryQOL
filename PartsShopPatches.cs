@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using HarmonyLib;
+using Restory.Gameplay.Devices;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -76,8 +78,6 @@ namespace RestoryQOL
 
             try
             {
-                var log = Core.Instance.LoggerInstance;
-
                 // Only act when the parts page is in ProductsSelection mode.
                 var pageState = Traverse.Create(__instance).Property("CurrentState").GetValue();
                 if (pageState == null) return;
@@ -105,12 +105,7 @@ namespace RestoryQOL
 
                 // Notebook order: DeviceInfo.Elements in source order.
                 var elementsProp = Traverse.Create(deviceInfo).Property("Elements");
-                var deviceOrderedParts = new List<object>();
-                foreach (var element in (IEnumerable)elementsProp.GetValue())
-                {
-                    if (element != null)
-                        deviceOrderedParts.Add(element);
-                }
+                var deviceOrderedParts = (from object it in (IEnumerable) elementsProp.GetValue() where it != null select it).ToList();
 
                 var panelView = Traverse.Create(panel).Field("view").GetValue();
                 if (panelView == null || !_productPanelViewType.IsInstanceOfType(panelView)) return;
@@ -129,14 +124,10 @@ namespace RestoryQOL
                     missingElements = CollectMissingElements(container, device);
 
                 if (Core.SortPartsByNotebook.Value && isSingleDevice && modelCount == 1)
-                {
                     SortProductsToNotebookOrder(productsListParent, filter, deviceOrderedParts);
-                }
 
-                if (missingElements != null && missingElements.Count > 0)
-                {
+                if (missingElements is { Count: > 0 })
                     HighlightMissingProducts(productsListParent, filter, missingElements);
-                }
             }
             catch (Exception ex)
             {
@@ -180,8 +171,7 @@ namespace RestoryQOL
                 if (element == null) { orderAndIndex.Add(new KeyValuePair<int, int>(-1, i)); continue; }
                 var shopItemData = Traverse.Create(element).Property("ShopItemData").GetValue();
                 var partInfo = shopItemData == null ? null : Traverse.Create(shopItemData).Field("Element").GetValue();
-                int order;
-                orderAndIndex.Add(partInfo != null && indexOfPart.TryGetValue(partInfo, out order)
+                orderAndIndex.Add(partInfo != null && indexOfPart.TryGetValue(partInfo, out var order)
                     ? new KeyValuePair<int, int>(order, i)
                     : new KeyValuePair<int, int>(-1, i));
             }
@@ -190,18 +180,15 @@ namespace RestoryQOL
             // in their original (price-sorted) order.
             orderAndIndex.Sort((a, b) =>
             {
-                if (a.Key != b.Key)
-                {
-                    if (a.Key == -1) return 1;
-                    if (b.Key == -1) return -1;
-                    return a.Key.CompareTo(b.Key);
-                }
-                return a.Value.CompareTo(b.Value);
+                if (a.Key == b.Key) return a.Value.CompareTo(b.Value);
+                if (a.Key == -1) return 1;
+                if (b.Key == -1) return -1;
+                return a.Key.CompareTo(b.Key);
             });
 
             // Re-sibling in the new order (SetAsLastSibling preserves layout order).
-            for (var i = 0; i < orderAndIndex.Count; i++)
-                itemTransforms[orderAndIndex[i].Value].SetAsLastSibling();
+            foreach (var t in orderAndIndex)
+                itemTransforms[t.Value].SetAsLastSibling();
         }
 
         /// <summary>
@@ -223,7 +210,7 @@ namespace RestoryQOL
             if (parentObj == null) return missing;
             var parentTransform = (parentObj as Component)?.transform;
             if (parentTransform == null) return missing;
-            var dismantledPackType = parentTransform.GetComponent("DismantledDevicePack");
+            var dismantledPackType = parentTransform.GetComponent<DismantledDevicePack>();
             if (dismantledPackType != null)
             {
                 var packed = Traverse.Create(dismantledPackType).Property("PlacedElements").GetValue();
@@ -234,41 +221,23 @@ namespace RestoryQOL
                 var workSurface = UnityEngine.Object.FindObjectOfType(_workSurfaceType);
                 if (workSurface != null)
                 {
-                    var placed = Traverse.Create(workSurface).Property("PlacedElements").GetValue() as IEnumerable;
-                    if (placed != null)
-                    {
-                        foreach (var element in placed)
-                        {
-                            if (element != null)
-                                surfaceElements.Add(element);
-                        }
-                    }
+                    if (Traverse.Create(workSurface).Property("PlacedElements").GetValue() is IEnumerable placed)
+                        surfaceElements.AddRange(placed.Cast<object>().Where(element => element != null));
                 }
             }
 
-            for (var i = 0; i < socketList.Count; i++)
+            foreach (var socket in socketList)
             {
-                var socket = socketList[i];
                 if (socket == null) continue;
                 var socketTraverse = Traverse.Create(socket);
                 var nested = socketTraverse.Property("NestedElement").GetValue();
                 var compatible = socketTraverse.Property("CompatibleElementInfo").GetValue();
                 if (nested != null || compatible == null) continue;
 
-                var compatibleInfo = compatible;
-                var hasSurfaceReplacement = false;
-                foreach (var surfaceElement in surfaceElements)
-                {
-                    if (surfaceElement == null) continue;
-                    var info = Traverse.Create(surfaceElement).Property("Info").GetValue();
-                    if (info != null && ReferenceEquals(info, compatibleInfo))
-                    {
-                        hasSurfaceReplacement = true;
-                        break;
-                    }
-                }
+                var hasSurfaceReplacement = (from el in surfaceElements where el != null 
+                    select Traverse.Create(el).Property("Info").GetValue()).Any(info => info != null && ReferenceEquals(info, compatible));
                 if (!hasSurfaceReplacement)
-                    missing.Add(compatibleInfo);
+                    missing.Add(compatible);
             }
 
             return missing;
@@ -276,17 +245,11 @@ namespace RestoryQOL
 
         private static void AddSurfaceElementsFromPlaced(object placedElements, List<object> surfaceElements)
         {
-            if (placedElements == null || !_placedElementsType.IsInstanceOfType(placedElements))
-                return;
-            var elementsOnSurface = Traverse.Create(placedElements).Property("ElementsOnSurface").GetValue() as IEnumerable;
-            if (elementsOnSurface == null) return;
-            foreach (var record in elementsOnSurface)
-            {
-                if (record == null) continue;
-                var element = Traverse.Create(record).Field("Element").GetValue();
-                if (element != null)
-                    surfaceElements.Add(element);
-            }
+            if (placedElements == null || !_placedElementsType.IsInstanceOfType(placedElements)) return;
+            if (Traverse.Create(placedElements).Property("ElementsOnSurface").GetValue() is not IEnumerable elementsOnSurface) return;
+            surfaceElements.AddRange(from object rec in elementsOnSurface 
+                where rec != null select Traverse.Create(rec).Field("Element").GetValue() 
+                into it where it != null select it);
         }
 
         /// <summary>
@@ -335,17 +298,14 @@ namespace RestoryQOL
                 img.color = new Color(1f, 0.35f, 0.2f, 0.18f);
                 img.raycastTarget = false;
             }
-            else if (overlay != null)
-            {
-                UnityEngine.Object.Destroy(overlay.gameObject);
-            }
+            else if (overlay != null) UnityEngine.Object.Destroy(overlay.gameObject);
         }
 
-        private static int GetCountOfIList(object value)
+        private static int GetCountOfIList(object value) => value switch
         {
-            if (value is IList list) return list.Count;
-            if (value is ICollection collection) return collection.Count;
-            return -1;
-        }
+            IList list => list.Count,
+            ICollection collection => collection.Count,
+            _ => -1
+        };
     }
 }
