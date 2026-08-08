@@ -18,9 +18,10 @@ namespace RestoryQOL.Mods
     /// screwdriver) code path: jump the tween to its end state, fire the
     /// short-interaction event, then complete the interaction, so sockets,
     /// SFX, and device integrity all update through vanilla listeners.
-    /// Unscrewed screws are thrown loose exactly like vanilla does when
-    /// leaving disassembly mode: small screws go to the small-parts bin,
-    /// bigger ones are dropped onto the nearest surface.
+    /// Unscrewed screws are thrown loose into the small-parts bin,
+    /// exactly like vanilla leaving disassembly mode. Screw-in mirrors
+    /// clicking the hole's projection: the coupled screw is re-attached
+    /// from the bin, then driven to its tightened end state.
     /// Tween endpoints are the exact same local positions the vanilla tween
     /// would reach (PlayImmediately/PlayBackwardsImmediately set them
     /// directly), so screws land exactly where manual screwing would put them.
@@ -31,6 +32,7 @@ namespace RestoryQOL.Mods
 
         private static MethodInfo _completeMethod;
         private static MethodInfo _throwLooseMethod;
+        private static MethodInfo _hideProjectionMethod;
         private static bool _warnedNoTool;
         private static readonly HashSet<ThreadedElement> _acted = new HashSet<ThreadedElement>();
         private static float _lastErrorLogTime = -999f;
@@ -76,26 +78,65 @@ namespace RestoryQOL.Mods
                 // NOTE: SortedSockets intentionally excludes Small-category
                 // sockets, and most screws are Small. ElementSockets is the
                 // full list.
+                //
+                // Unscrew (X) and screw-in (Z) enumerate differently because
+                // that is how the game itself tracks them:
+                //  - A tightened screw sits in socket.NestedElement.
+                //  - After unscrewing, the socket detaches it and keeps a
+                //    reference in socket.LastNestedElement (that is what the
+                //    small-screw projection re-attaches when clicked), while
+                //    the physical screw lives in the small-parts bin.
                 foreach (var socket in container.Device.ElementSockets)
                 {
-                    if (socket?.NestedElement is not ThreadedElement element) continue;
-                    total++;
-                    if (_acted.Contains(element)) continue;
-                    if (element.IsBlocked) { blocked++; continue; }
-                    if (unscrew && element.IsInstalling) { alreadyDone++; continue; }
-                    if (screwIn && !element.IsInstalling) { alreadyDone++; continue; }
-                    switch (InstantInteract(container.Device, element, tool))
+                    if (socket == null) continue;
+
+                    if (screwIn)
                     {
-                        case SkipReason.None:
-                            _acted.Add(element);
-                            acted++;
-                            break;
-                        case SkipReason.Busy:
-                            busy++;
-                            break;
-                        default:
-                            noTweener++;
-                            break;
+                        // Empty hole with a coupled screw waiting in the bin.
+                        if (socket.NestedElement != null) { alreadyDone++; continue; }
+                        if (socket.LastNestedElement is not ThreadedElement loose) continue;
+                        total++;
+                        if (_acted.Contains(loose)) continue;
+                        // IsAvailable is the same gate vanilla uses before
+                        // showing the hole's projection: it is false while a
+                        // blocker part (cover, board, ...) that must be
+                        // assembled first is still missing, which is exactly
+                        // the "floating screw with no assembled socket" case.
+                        if (!socket.IsAvailable) { blocked++; continue; }
+                        switch (InstantInteract(null, socket, loose, tool))
+                        {
+                            case SkipReason.None:
+                                _acted.Add(loose);
+                                acted++;
+                                break;
+                            case SkipReason.Busy:
+                                busy++;
+                                break;
+                            default:
+                                noTweener++;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        if (socket.NestedElement is not ThreadedElement element) continue;
+                        total++;
+                        if (_acted.Contains(element)) continue;
+                        if (element.IsBlocked) { blocked++; continue; }
+                        if (element.IsInstalling) { alreadyDone++; continue; }
+                        switch (InstantInteract(container.Device, null, element, tool))
+                        {
+                            case SkipReason.None:
+                                _acted.Add(element);
+                                acted++;
+                                break;
+                            case SkipReason.Busy:
+                                busy++;
+                                break;
+                            default:
+                                noTweener++;
+                                break;
+                        }
                     }
                 }
 
@@ -118,14 +159,36 @@ namespace RestoryQOL.Mods
             }
         }
 
-        private static SkipReason InstantInteract(Device device, ThreadedElement element, UnscrewingToolInfo tool)
+        /// <summary>
+        /// Jumps a screw's tween straight to its end state and completes the
+        /// interaction, replicating the power screwdriver's instant path.
+        /// Unscrew additionally throws the screw loose into the small-parts
+        /// bin, exactly like vanilla leaving disassembly mode. Screw-in first
+        /// re-attaches the coupled screw from the bin to its socket, mirroring
+        /// ElementSocket.ResolveProjectionActivated (clicking the hole's
+        /// projection): AttachElement re-parents it, fires AttachToDevice
+        /// which moves it to the near-final position and flags IsInstalling,
+        /// then we drive the tween to the tightened end.
+        /// </summary>
+        private static SkipReason InstantInteract(Device device, ElementSocket socket, ThreadedElement element, UnscrewingToolInfo tool)
         {
             var elementTraverse = Traverse.Create(element);
             var tweener = elementTraverse.Field("tweener").GetValue();
             if (tweener == null) return SkipReason.NoTweener;
             if (IsTweenPlaying(tweener)) return SkipReason.Busy;
 
-            var wasInstalling = element.IsInstalling;
+            // Exactly one of socket (screw-in) or device (unscrew) is set.
+            if (socket != null)
+            {
+                // Vanilla ResolveProjectionActivated hides the hole's small
+                // projection before attaching; skipping it leaves the screw
+                // outline visible after the screw is back in.
+                _hideProjectionMethod ??= typeof(ElementSocket).GetMethod("HideSmallElementProjection",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                _hideProjectionMethod?.Invoke(socket, null);
+                socket.AttachElement(element);
+            }
+
             var rotationTweener = elementTraverse.Field("rotationTweener").GetValue();
             var playMethod = element.IsInstalling ? "PlayBackwardsImmediately" : "PlayImmediately";
             Traverse.Create(tweener).Method(playMethod).GetValue();
@@ -138,7 +201,7 @@ namespace RestoryQOL.Mods
                 BindingFlags.NonPublic | BindingFlags.Instance);
             _completeMethod?.Invoke(element, null);
 
-            if (!wasInstalling)
+            if (device != null)
             {
                 _throwLooseMethod ??= typeof(Device).GetMethod("ThrowLooseElement",
                     BindingFlags.NonPublic | BindingFlags.Instance);
