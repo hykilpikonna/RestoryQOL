@@ -31,6 +31,7 @@ namespace RestoryQOL
         public static MelonPreferences_Entry<bool> SnapToSocket;
         public static MelonPreferences_Entry<bool> QuickDispose;
         public static MelonPreferences_Entry<bool> RefreshMarketplace;
+        public static MelonPreferences_Entry<bool> SortBoxParts;
 
         #endregion
 
@@ -54,7 +55,8 @@ namespace RestoryQOL
             SkipLogos            = Category.CreateEntry("SkipLogos",            true,  "Skip startup logos");
             FixSaveHang          = Category.CreateEntry("FixSaveHang",          true,  "Fix save hang (skip texture conversion wait)");
             AutoPartsPage        = Category.CreateEntry("AutoPartsPage",        true,  "Auto-open parts page for placed device");
-SortPartsByNotebook = Category.CreateEntry("SortPartsByNotebook", true, "Sort the parts shop to match assembly order (per device; non-device tab groups by device then assembly order)");
+            SortPartsByNotebook  = Category.CreateEntry("SortPartsByNotebook",         true,  "Sort the parts shop to match the notebook's part order");
+            SortBoxParts         = Category.CreateEntry("SortBoxParts",                true,  "Sort the parts box by device, then assembly order");
             HighlightMissingParts = Category.CreateEntry("HighlightMissingParts", false, "Highlight parts missing from the current device");
             AutoScrew            = Category.CreateEntry("AutoScrew",            true,  "Hold Z/X to screw in/unscrew all visible screws");
             ResetTimerOnFail     = Category.CreateEntry("ResetTimerOnFail",     true,  "Reset competition timer when a competition attempt fails");
@@ -72,6 +74,8 @@ SortPartsByNotebook = Category.CreateEntry("SortPartsByNotebook", true, "Sort th
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.SaveFixPatches));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsPagePatches));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsShopPatches));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsBoxSortPatches));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsBoxRemovePatch));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.ResetTimerOnFail));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InstantUltrasonic));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.AutoTool));
@@ -121,7 +125,8 @@ SortPartsByNotebook = Category.CreateEntry("SortPartsByNotebook", true, "Sort th
             MenuEnabled.Value  = GUILayout.Toggle(MenuEnabled.Value,  " Start with menu open");
             HighlightMissingParts.Value = GUILayout.Toggle(HighlightMissingParts.Value, " Highlight missing parts");
             AutoPartsPage.Value       = GUILayout.Toggle(AutoPartsPage.Value,       " Auto-open parts for placed device");
-            SortPartsByNotebook.Value = GUILayout.Toggle(SortPartsByNotebook.Value, " Sort parts box by assembly order");
+            SortPartsByNotebook.Value = GUILayout.Toggle(SortPartsByNotebook.Value, " Sort parts shop by notebook order");
+            SortBoxParts.Value         = GUILayout.Toggle(SortBoxParts.Value,        " Sort parts box by device/assembly order");
             AutoTool.Value = GUILayout.Toggle(AutoTool.Value, " Auto-select tool (dirty: last cleaner, scorched: iron)");
             AdBlock.Value = GUILayout.Toggle(AdBlock.Value, " Block ad banners on shop pages");
             

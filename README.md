@@ -8,24 +8,30 @@ Just made this mod to make the game faster-paced using some QoL improvements (an
 
 ## Features
 
+**Cheats**
+
+* Bypass wallet deduction
+* Infinite money
+* Reset the competition timer when a competition attempt fails
+* Ultrasonic cleaner finishes instantly
+
 **QoL Improvements**
 
 * Skip startup logos
-* Automatically go to the device's part store page when you click on the browser while repairing the device
+* Start with the menu open
+* Highlight parts missing from the current device (in the parts shop)
+* Auto-open the parts page for the placed device
 * Sort the parts shop to match the notebook's part order
-* Highlight missing parts in part store page
-* Reset the competition timer when a competition attempt fails
-* Ultrasonic cleaner finishes instantly
-* Block the ad banners on the in-game browser's shop pages
+* Sort the parts box by device, then assembly order
 * Auto-select the right tool: last used cleaning tool for dirty parts, soldering iron for scorched parts
-* Hold ALT while dropping a part to snap it straight into its socket
-* Hold SHIFT while dropping a part to route it by condition: broken to the shredder, dirty to the ultrasonic bath, good to the parts box
-* Hold Z to instantly screw in all visible loose screws, hold X to unscrew them all
-* Ctrl+R to refresh marketplace
+* Block the ad banners on the in-game browser's shop pages
 
-**Cheats**
+**Hot Keys**
 
-* Infinite money / bypass wallet deduction
+* Hold ALT: snap a dropped part straight into its socket
+* Hold SHIFT on drop: route the part by condition (broken → shredder, dirty → ultrasonic bath, good → parts box)
+* CTRL+R: refresh the marketplace
+* Hold Z to screw in all visible loose screws, hold X to unscrew them all
 
 **Bug Fixes**
 
