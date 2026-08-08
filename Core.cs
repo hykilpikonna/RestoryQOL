@@ -28,6 +28,7 @@ namespace RestoryQOL
         public static MelonPreferences_Entry<bool> AutoNextScrewHole;
         public static MelonPreferences_Entry<bool> AutoRotateToScrew;
         public static MelonPreferences_Entry<bool> ResetTimerOnFail;
+        public static MelonPreferences_Entry<bool> InstantUltrasonic;
 
         #endregion
 
@@ -58,6 +59,7 @@ namespace RestoryQOL
             AutoNextScrewHole    = Category.CreateEntry("AutoNextScrewHole",    true,  "Hold CTRL to jump to the next empty screw hole");
             AutoRotateToScrew    = Category.CreateEntry("AutoRotateToScrew",    true,  "Up to 90 degrees of device auto-rotation when navigating");
             ResetTimerOnFail     = Category.CreateEntry("ResetTimerOnFail",     true,  "Reset competition timer when a competition attempt fails");
+            InstantUltrasonic    = Category.CreateEntry("InstantUltrasonic",    true,  "Ultrasonic cleaner finishes instantly");
             Category.SaveToFile(false);
 
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InfinityMoney));
@@ -67,6 +69,7 @@ namespace RestoryQOL
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsPagePatches));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsShopPatches));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.ResetTimerOnFail));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InstantUltrasonic));
 
             _visible = MenuEnabled.Value;
             LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");
@@ -123,6 +126,10 @@ namespace RestoryQOL
             GUILayout.Space(8f);
             GUILayout.Label("--- Competition ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             ResetTimerOnFail.Value = GUILayout.Toggle(ResetTimerOnFail.Value, " Reset competition timer on fail");
+
+            GUILayout.Space(8f);
+            GUILayout.Label("--- Equipment ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
+            InstantUltrasonic.Value = GUILayout.Toggle(InstantUltrasonic.Value, " Ultrasonic cleaner finishes instantly");
 
             GUILayout.EndVertical();
 

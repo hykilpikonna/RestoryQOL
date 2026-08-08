@@ -14,6 +14,7 @@ Just made this mod to make the game faster-paced using some QoL improvements (an
 * Automatically go to the device's part store page when you click on the browser while repairing the device
 * Highlight missing parts in part store page
 * Reset the competition timer when a competition attempt fails
+* Ultrasonic cleaner finishes instantly
 
 **Cheats**
 
