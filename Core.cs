@@ -1,3 +1,4 @@
+using System.Reflection;
 using HarmonyLib;
 using MelonLoader;
 using UnityEngine;
@@ -42,26 +43,25 @@ namespace RestoryQOL
         {
             Instance = this;
 
-            Category = MelonPreferences.CreateCategory("RestoryQOL");
-            MenuEnabled = Category.CreateEntry("MenuEnabled", true, "Start with menu open");
-            InfinityMoney = Category.CreateEntry("InfinityMoney", true, "Bypass wallet deduction on purchase");
-            FakeMoneyUI = Category.CreateEntry("FakeMoneyUI", true, "Fake unlimited money for UI checks");
-            SkipLogos = Category.CreateEntry("SkipLogos", true, "Skip startup logos");
-            FixSaveHang = Category.CreateEntry("FixSaveHang", true, "Fix save hang (skip texture conversion wait)");
-            SaveFeedback = Category.CreateEntry("SaveFeedback", true, "Show 'Saving...' text when saving");
-            AutoPartsPage = Category.CreateEntry("AutoPartsPage", true, "Auto-open parts page for placed device");
-            SortPartsByNotebook = Category.CreateEntry("SortPartsByNotebook", true, "Sort the parts shop to match the notebook's part order");
+            Category             = MelonPreferences.CreateCategory("RestoryQOL");
+            MenuEnabled          = Category.CreateEntry("MenuEnabled",          true,  "Start with menu open");
+            InfinityMoney        = Category.CreateEntry("InfinityMoney",        true,  "Bypass wallet deduction on purchase");
+            FakeMoneyUI          = Category.CreateEntry("FakeMoneyUI",          true,  "Fake unlimited money for UI checks");
+            SkipLogos            = Category.CreateEntry("SkipLogos",            true,  "Skip startup logos");
+            FixSaveHang          = Category.CreateEntry("FixSaveHang",          true,  "Fix save hang (skip texture conversion wait)");
+            SaveFeedback         = Category.CreateEntry("SaveFeedback",         true,  "Show 'Saving...' text when saving");
+            AutoPartsPage        = Category.CreateEntry("AutoPartsPage",        true,  "Auto-open parts page for placed device");
+            SortPartsByNotebook  = Category.CreateEntry("SortPartsByNotebook",  true,  "Sort the parts shop to match the notebook's part order");
             HighlightMissingParts = Category.CreateEntry("HighlightMissingParts", false, "Highlight parts missing from the current device");
-            AutoNextScrew = Category.CreateEntry("AutoNextScrew", true, "Hold SHIFT to jump to the next screw to unscrew");
-            AutoNextScrewHole = Category.CreateEntry("AutoNextScrewHole", true, "Hold CTRL to jump to the next empty screw hole");
-            AutoRotateToScrew = Category.CreateEntry("AutoRotateToScrew", true, "Up to 90 degrees of device auto-rotation when navigating");
+            AutoNextScrew        = Category.CreateEntry("AutoNextScrew",        true,  "Hold SHIFT to jump to the next screw to unscrew");
+            AutoNextScrewHole    = Category.CreateEntry("AutoNextScrewHole",    true,  "Hold CTRL to jump to the next empty screw hole");
+            AutoRotateToScrew    = Category.CreateEntry("AutoRotateToScrew",    true,  "Up to 90 degrees of device auto-rotation when navigating");
             Category.SaveToFile(false);
 
-            var harmony = new HarmonyLib.Harmony("RestoryQOL");
-            Patches.Apply(harmony);
-            HarmonyLib.Harmony.CreateAndPatchAll(typeof(SaveFixPatches));
-            HarmonyLib.Harmony.CreateAndPatchAll(typeof(PartsPagePatches));
-            PartsShopPatches.Apply(harmony);
+            // All patches live in Mods/ and use [HarmonyPatch] annotations
+            // (or TargetMethod() for reflection-resolved types). A single
+            // PatchAll call registers every patch class in this assembly.
+            HarmonyLib.Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), "RestoryQOL");
 
             _visible = MenuEnabled.Value;
             LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");
@@ -91,30 +91,27 @@ namespace RestoryQOL
 
             GUILayout.Label("--- Money ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             InfinityMoney.Value = GUILayout.Toggle(InfinityMoney.Value, " Bypass wallet deduction");
-            FakeMoneyUI.Value = GUILayout.Toggle(FakeMoneyUI.Value, " Fake unlimited money (UI)");
+            FakeMoneyUI.Value   = GUILayout.Toggle(FakeMoneyUI.Value,   " Fake unlimited money (UI)");
 
             GUILayout.Space(8f);
             GUILayout.Label("--- Startup ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-            SkipLogos.Value = GUILayout.Toggle(SkipLogos.Value, " Skip startup logos");
-
-            GUILayout.Space(8f);
-            GUILayout.Label("--- Interface ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-            MenuEnabled.Value = GUILayout.Toggle(MenuEnabled.Value, " Start with menu open");
+            SkipLogos.Value    = GUILayout.Toggle(SkipLogos.Value,    " Skip startup logos");
+            MenuEnabled.Value  = GUILayout.Toggle(MenuEnabled.Value,  " Start with menu open");
 
             GUILayout.Space(8f);
             GUILayout.Label("--- Save Fix ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-            FixSaveHang.Value = GUILayout.Toggle(FixSaveHang.Value, " Fix save hang (skip texture wait)");
+            FixSaveHang.Value  = GUILayout.Toggle(FixSaveHang.Value,  " Fix save hang (skip texture wait)");
             SaveFeedback.Value = GUILayout.Toggle(SaveFeedback.Value, " Show 'Saving...' feedback");
 
             GUILayout.Space(8f);
             GUILayout.Label("--- Workflow ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-            AutoPartsPage.Value = GUILayout.Toggle(AutoPartsPage.Value, " Auto-open parts for placed device");
+            AutoPartsPage.Value       = GUILayout.Toggle(AutoPartsPage.Value,       " Auto-open parts for placed device");
             SortPartsByNotebook.Value = GUILayout.Toggle(SortPartsByNotebook.Value, " Sort parts shop to notebook order");
             HighlightMissingParts.Value = GUILayout.Toggle(HighlightMissingParts.Value, " Highlight missing parts");
 
             GUILayout.Space(8f);
             GUILayout.Label("--- Screw Navigation ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-            AutoNextScrew.Value = GUILayout.Toggle(AutoNextScrew.Value, " Hold SHIFT: jump to next screw to unscrew");
+            AutoNextScrew.Value     = GUILayout.Toggle(AutoNextScrew.Value,     " Hold SHIFT: jump to next screw to unscrew");
             AutoNextScrewHole.Value = GUILayout.Toggle(AutoNextScrewHole.Value, " Hold CTRL: jump to next empty screw hole");
             AutoRotateToScrew.Value = GUILayout.Toggle(AutoRotateToScrew.Value, " Auto-rotate device (up to 90°) when jumping");
 
