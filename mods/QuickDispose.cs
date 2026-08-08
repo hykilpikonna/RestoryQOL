@@ -118,36 +118,54 @@ namespace RestoryQOL.Mods
         }
 
         /// <summary>Ultrasonic bath first, manual cleaner as fallback.</summary>
+        /// <summary>
+        /// Route by need, not just condition: a part that is actually dirty goes
+        /// to the ultrasonic bath (which only cleans), but a clean part that
+        /// only needs soldering goes straight to the soldering station, since
+        /// the bath would leave it scorched.
+        /// </summary>
         private static void RouteDirty(Traverse inst, DraggingDisassembleState state, ElementBase element)
         {
-            var ultrasonic = inst.Field("ultrasonicService").GetValue<UltrasonicService>();
-            bool bathOk = false;
-            if (ultrasonic != null)
+            var cleaner = inst.Field("elementCleaner").GetValue<ElementCleaner>();
+            var cleaningData = cleaner == null ? null : cleaner.DraggingElementInitialCleaningData;
+            // IsFullyCleaned means there is no dirt to wash off; if cleaning
+            // data exists anyway, the part only needs soldering. CleaningProgress
+            // lives in the unreferenced PWSMechanic assembly, so read it
+            // reflectively (same approach as AutoTool's out-parameter calls).
+            var needsCleaning = cleaningData != null && !IsFullyCleaned(cleaningData);
+
+            if (needsCleaning)
             {
-                // TryInsertElement needs the SonicBathElementFitter to hold fit
-                // data for the element, which vanilla only populates by hovering
-                // the part over the bath (TryFitElementToSonicBath). SHIFT-drop
-                // skips that, so prime the fitter with the bath's own position
-                // first. TryInsertElementToSonicBath still validates the rest
-                // (active tool, not running, not full, not damaged).
-                var bath = Traverse.Create(ultrasonic).Field("sonicBath").GetValue<SonicBath>();
-                if (bath != null && bath.ActiveTool != null)
-                    ultrasonic.TryFitElementToSonicBath(element, bath.transform.position);
-                bathOk = ultrasonic.TryInsertElementToSonicBath(element);
-            }
-            if (bathOk)
-            {
-                inst.Field("stateMachine").GetValue<DisassembleStateMachine>().Enter<DetectionDisassembleState>();
-                return;
+                var ultrasonic = inst.Field("ultrasonicService").GetValue<UltrasonicService>();
+                bool bathOk = false;
+                if (ultrasonic != null)
+                {
+                    // TryInsertElement needs the SonicBathElementFitter to hold fit
+                    // data for the element, which vanilla only populates by hovering
+                    // the part over the bath (TryFitElementToSonicBath). SHIFT-drop
+                    // skips that, so prime the fitter with the bath's own position
+                    // first. TryInsertElementToSonicBath still validates the rest
+                    // (active tool, not running, not full, not damaged).
+                    var bath = Traverse.Create(ultrasonic).Field("sonicBath").GetValue<SonicBath>();
+                    if (bath != null && bath.ActiveTool != null)
+                        ultrasonic.TryFitElementToSonicBath(element, bath.transform.position);
+                    bathOk = ultrasonic.TryInsertElementToSonicBath(element);
+                }
+                if (bathOk)
+                {
+                    inst.Field("stateMachine").GetValue<DisassembleStateMachine>().Enter<DetectionDisassembleState>();
+                    return;
+                }
             }
 
-            var cleaner = inst.Field("elementCleaner").GetValue<ElementCleaner>();
+            // Soldering-only part, or the bath refused a dirty one: open the
+            // cleaning/soldering station exactly like dropping it there.
             var panel = Resolve<GUI_ElementCleanerPanel>();
             var stateMachine = inst.Field("stateMachine").GetValue<DisassembleStateMachine>();
             if (cleaner == null || panel == null || stateMachine == null) return;
-            if (cleaner.DraggingElementInitialCleaningData == null) return;
+            if (cleaningData == null) return;
 
-            panel.Init(element, cleaner.DraggingElementInitialCleaningData);
+            panel.Init(element, cleaningData);
             panel.Show();
             element.IsDragging = false;
             stateMachine.Enter<TransitionToCleaningDisassembleState, ElementBase>(element);
@@ -162,6 +180,17 @@ namespace RestoryQOL.Mods
 
             if (elementService.TrySendItemToStorage(element))
                 stateMachine.Enter<DetectionDisassembleState>();
+        }
+
+        private static bool IsFullyCleaned(Restory.Gameplay.Cleaning.InitialCleaningData data)
+        {
+            // CleaningProgress is a PWSMechanic value type the mod doesn't
+            // reference, so read both the property and IsFullyCleaned via
+            // reflection (boxed object), never naming the type at compile time.
+            var progress = Traverse.Create(data).Property("CleaningProgress").GetValue();
+            if (progress == null) return true;
+            var method = progress.GetType().GetMethod("IsFullyCleaned");
+            return method == null || (bool) method.Invoke(progress, null);
         }
 
         private static T Resolve<T>() where T : class
