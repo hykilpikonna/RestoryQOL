@@ -60,17 +60,17 @@ namespace RestoryQOL.Mods
 
             if (!_resolved)
             {
-                Core.Instance.LoggerInstance.Warning("[PartsShop] One or more game types not found; feature disabled.");
+                Core.Instance?.LoggerInstance.Warning("[PartsShop] One or more game types not found; feature disabled.");
                 return null;
             }
 
             var showMethod = AccessTools.Method(_elementsShopPageType, "Show");
             if (showMethod == null)
             {
-                Core.Instance.LoggerInstance.Warning("[PartsShop] Could not find GUI_ElementsShopPage.Show; feature disabled.");
+                Core.Instance?.LoggerInstance.Warning("[PartsShop] Could not find GUI_ElementsShopPage.Show; feature disabled.");
                 return null;
             }
-            Core.Instance.LoggerInstance.Msg("[PartsShop] GUI_ElementsShopPage.Show patched (postfix).");
+            Core.Instance?.LoggerInstance.Msg("[PartsShop] GUI_ElementsShopPage.Show patched (postfix).");
             return showMethod;
         }
 
