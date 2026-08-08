@@ -19,6 +19,7 @@ Just made this mod to make the game faster-paced using some QoL improvements (an
 * Block the ad banners on the in-game browser's shop pages
 * Auto-select the right tool: last used cleaning tool for dirty parts, soldering iron for scorched parts
 * Hold ALT while dropping a part to snap it straight into its socket
+* Hold SHIFT while dropping a part to route it by condition: broken to the shredder, dirty to the ultrasonic bath, good to the parts box
 * Hold Z to instantly screw in all visible loose screws, hold X to unscrew them all
 
 **Cheats**

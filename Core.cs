@@ -29,6 +29,7 @@ namespace RestoryQOL
         public static MelonPreferences_Entry<bool> AutoTool;
         public static MelonPreferences_Entry<bool> AdBlock;
         public static MelonPreferences_Entry<bool> SnapToSocket;
+        public static MelonPreferences_Entry<bool> QuickDispose;
 
         #endregion
 
@@ -60,6 +61,7 @@ namespace RestoryQOL
             AutoTool             = Category.CreateEntry("AutoTool",             true,  "Auto-select cleaning tool or soldering iron based on element");
             AdBlock              = Category.CreateEntry("AdBlock",              true,  "Hide cross-promo ad banners on browser shop pages");
             SnapToSocket         = Category.CreateEntry("SnapToSocket",         true,  "Hold ALT to snap a dropped part into its socket");
+            QuickDispose         = Category.CreateEntry("QuickDispose",         true,  "Hold SHIFT on drop: broken->shredder, dirty->cleaner, good->parts box");
             Category.SaveToFile(false);
 
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InfinityMoney));
@@ -73,6 +75,7 @@ namespace RestoryQOL
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.AutoTool));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.AdBlock));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.SnapToSocket));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.QuickDispose));
 
             _visible = MenuEnabled.Value;
             LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");
@@ -119,6 +122,7 @@ namespace RestoryQOL
             AutoTool.Value = GUILayout.Toggle(AutoTool.Value, " Auto-select tool (dirty: last cleaner, scorched: iron)");
             AdBlock.Value = GUILayout.Toggle(AdBlock.Value, " Block ad banners on shop pages");
             SnapToSocket.Value = GUILayout.Toggle(SnapToSocket.Value, " Hold ALT: snap dropped part into socket");
+            QuickDispose.Value = GUILayout.Toggle(QuickDispose.Value, " Hold SHIFT on drop: auto-route part by condition");
 
             GUILayout.Space(8f);
             GUILayout.Label("--- Bug Fix ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
