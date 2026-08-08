@@ -10,23 +10,8 @@ namespace RestoryQOL
 {
     public static class PartsPagePatches
     {
-        public static void Apply(HarmonyLib.Harmony harmony)
-        {
-            var gameAsm = typeof(Wallet).Assembly;
-
-            var webBrowserType = gameAsm.GetType("Restory.UI.Presenters.GUI_WebBrowser");
-            if (webBrowserType != null)
-            {
-                var launchMethod = AccessTools.DeclaredMethod(webBrowserType, "LaunchProcess");
-                harmony.Patch(launchMethod, postfix: new HarmonyMethod(typeof(PartsPagePatches), nameof(LaunchProcess_Postfix)));
-                Core.Instance.LoggerInstance.Msg("[PartsPage] GUI_WebBrowser.LaunchProcess");
-            }
-            else
-            {
-                Core.Instance.LoggerInstance.Warning("[PartsPage] GUI_WebBrowser NOT FOUND");
-            }
-        }
-
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Restory.UI.Presenters.GUI_WebBrowser), "LaunchProcess")]
         public static void LaunchProcess_Postfix(object __instance)
         {
             if (!Core.AutoPartsPage.Value) return;

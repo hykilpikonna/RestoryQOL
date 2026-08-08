@@ -6,11 +6,6 @@ namespace RestoryQOL
 {
     public static class SaveFixPatches
     {
-        public static void Apply(HarmonyLib.Harmony harmony)
-        {
-            HarmonyLib.Harmony.CreateAndPatchAll(typeof(SaveFixPatches));
-        }
-
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Restory.Gameplay.TextureMasks.TextureCacheService), "WaitForAllTexturesConversionCompletion")]
         public static bool WaitForTexturesPrefix(ref Task __result)

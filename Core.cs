@@ -59,10 +59,9 @@ namespace RestoryQOL
 
             var harmony = new HarmonyLib.Harmony("RestoryQOL");
             Patches.Apply(harmony);
-            SaveFixPatches.Apply(harmony);
-            PartsPagePatches.Apply(harmony);
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(SaveFixPatches));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(PartsPagePatches));
             PartsShopPatches.Apply(harmony);
-            ScrewNavigationPatches.Apply(harmony);
 
             _visible = MenuEnabled.Value;
             LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");
