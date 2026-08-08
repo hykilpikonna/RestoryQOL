@@ -76,3 +76,13 @@ crashlytics-build.properties
 /bin
 /.idea
 /.run
+
+# CI / stub generator
+/tools/StubGenerator/out/
+/tools/StubGenerator/obj/
+/tools/StubGenerator/bin/
+/libs/game/
+
+# Stub DLLs in libs/ ARE tracked — do not ignore them
+!libs/Managed/*.dll
+!libs/MelonLoader/*.dll

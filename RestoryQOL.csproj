@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>RestoryQOL</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <AssemblyName>RestoryQOL</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <Version>1.0.0</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+    <!-- Exclude decompiled game sources and CI tools from compilation -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);RestorySrc\**\*;tools\**\*</DefaultItemExcludes>
+    <!-- Unity 6000 assemblies have an indirect dependency on System.EnterpriseServices v4.0 -->
+    <NoWarn>$(NoWarn);MSB3258</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- net35 reference assemblies from NuGet (offline build support) -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Game managed assemblies -->
+    <Reference Include="Restory.Assembly">
+      <HintPath>$(GamePath)\Restory_Data\Managed\Restory.Assembly.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(GamePath)\Restory_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(GamePath)\Restory_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(GamePath)\Restory_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(GamePath)\Restory_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(GamePath)\Restory_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(GamePath)\Restory_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Sirenix.Serialization">
+      <HintPath>$(GamePath)\Restory_Data\Managed\Sirenix.Serialization.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Rewired_Core">
+      <HintPath>$(GamePath)\Restory_Data\Managed\Rewired_Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RewiredAssembly">
+      <HintPath>$(GamePath)\Restory_Data\Managed\RewiredAssembly.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Zenject-usage">
+      <HintPath>$(GamePath)\Restory_Data\Managed\Zenject-usage.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- MelonLoader + Harmony -->
+    <Reference Include="MelonLoader">
+      <HintPath>$(GamePath)\MelonLoader\net35\MelonLoader.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(GamePath)\MelonLoader\net35\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" Command="COPY /Y &quot;$(TargetPath)&quot; &quot;$(GamePath)\Mods&quot;" />
+    <Exec Condition="!$([MSBuild]::IsOSPlatform('Windows'))" Command="cp -f &quot;$(TargetPath)&quot; &quot;$(GamePath)/Mods/&quot;" />
+  </Target>
+</Project>

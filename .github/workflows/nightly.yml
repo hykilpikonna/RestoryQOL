@@ -1,0 +1,182 @@
+name: Build & Nightly Release
+
+on:
+  push:
+    branches: ["**"]   # Run on every commit to any branch
+
+permissions:
+  contents: write      # Needed to create/update releases and push tags
+
+jobs:
+  build:
+    name: Build RestoryQOL
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ─────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Full history so we can get commit info
+
+      # ── 2. Set up .NET ──────────────────────────────────────────────────────
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.x"   # StubGenerator targets net10.0; mod targets netstandard2.1
+
+      # ── 3. Cache NuGet packages ─────────────────────────────────────────────
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-
+
+      # ── 4. Restore & build StubGenerator ────────────────────────────────────
+      - name: Build StubGenerator
+        run: dotnet build tools/StubGenerator/StubGenerator.csproj -c Release -o tools/StubGenerator/out
+
+      # ── 5. Generate stub DLLs from libs/input/ ──────────────────────────────
+      #
+      #  HOW TO SET UP:
+      #  Run the stub generator locally once to create the stubs, then commit
+      #  the output to libs/. After that, CI uses the pre-committed stubs and
+      #  this step is a no-op (it only runs if libs/ is empty or missing stubs).
+      #
+      #  To regenerate stubs locally:
+      #    dotnet run --project tools/StubGenerator -- --batch \
+      #      "C:\Program Files\Steam\steamapps\common\Restory\Restory_Data\Managed" \
+      #      libs/Managed
+      #    dotnet run --project tools/StubGenerator -- --batch \
+      #      "C:\Program Files\Steam\steamapps\common\Restory\MelonLoader\net35" \
+      #      libs/MelonLoader
+      #
+      - name: Verify stub DLLs present
+        run: |
+          required_dlls=(
+            "libs/Managed/Restory.Assembly.dll"
+            "libs/Managed/UnityEngine.dll"
+            "libs/Managed/UnityEngine.CoreModule.dll"
+            "libs/Managed/UnityEngine.IMGUIModule.dll"
+            "libs/Managed/UnityEngine.InputLegacyModule.dll"
+            "libs/Managed/UnityEngine.TextRenderingModule.dll"
+            "libs/Managed/UnityEngine.UI.dll"
+            "libs/Managed/Sirenix.Serialization.dll"
+            "libs/Managed/Rewired_Core.dll"
+            "libs/Managed/RewiredAssembly.dll"
+            "libs/Managed/Zenject-usage.dll"
+            "libs/MelonLoader/MelonLoader.dll"
+            "libs/MelonLoader/0Harmony.dll"
+          )
+          missing=0
+          for dll in "${required_dlls[@]}"; do
+            if [[ ! -f "$dll" ]]; then
+              echo "::error::Missing stub DLL: $dll"
+              echo "Run the StubGenerator tool locally and commit the output to libs/"
+              missing=1
+            fi
+          done
+          if [[ $missing -eq 1 ]]; then
+            exit 1
+          fi
+          echo "All required stub DLLs present."
+
+      # ── 6. Set up stub DLL layout ────────────────────────────────────────────
+      - name: Set up stub game layout
+        run: |
+          GAME_PATH="$GITHUB_WORKSPACE/libs/game"
+
+          # Create the directory tree the .csproj HintPaths expect
+          mkdir -p "$GAME_PATH/Restory_Data/Managed"
+          mkdir -p "$GAME_PATH/MelonLoader/net35"
+          mkdir -p "$GAME_PATH/Mods"
+
+          # Hard-link stubs into the expected layout
+          for dll in libs/Managed/*.dll; do
+            ln -f "$dll" "$GAME_PATH/Restory_Data/Managed/$(basename $dll)"
+          done
+          for dll in libs/MelonLoader/*.dll; do
+            ln -f "$dll" "$GAME_PATH/MelonLoader/net35/$(basename $dll)"
+          done
+
+          # Write Directory.Build.props with the exact absolute GamePath so
+          # MSBuild's HintPaths resolve correctly and the PostBuild target
+          # copies to an existing Mods/ directory (which we just created).
+          cat > Directory.Build.props << EOF
+          <Project>
+            <PropertyGroup>
+              <GamePath>$GAME_PATH</GamePath>
+            </PropertyGroup>
+          </Project>
+          EOF
+
+          echo "GamePath set to: $GAME_PATH"
+          ls "$GAME_PATH/Restory_Data/Managed/" | head -5
+
+      # ── 7. Build the mod ─────────────────────────────────────────────────────
+      - name: Build RestoryQOL (Release)
+        run: |
+          dotnet build RestoryQOL.csproj -c Release \
+            -o build/output
+
+      # ── 8. Collect artifact ──────────────────────────────────────────────────
+      - name: Collect artifact
+        run: |
+          mkdir -p dist
+          cp build/output/RestoryQOL.dll dist/RestoryQOL.dll
+
+          # Embed build metadata in the filename for nightly
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          DATE=$(date -u +%Y%m%d)
+          cp dist/RestoryQOL.dll "dist/RestoryQOL-nightly-${DATE}-${SHORT_SHA}.dll"
+
+          echo "ARTIFACT_DLL=dist/RestoryQOL-nightly-${DATE}-${SHORT_SHA}.dll" >> $GITHUB_ENV
+          echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_ENV
+          echo "DATE=${DATE}" >> $GITHUB_ENV
+
+      # ── 9. Upload build artifact (always, for every branch) ──────────────────
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RestoryQOL-${{ env.DATE }}-${{ env.SHORT_SHA }}
+          path: dist/RestoryQOL.dll
+          retention-days: 30
+
+      # ── 10. Update nightly release (main branch only) ────────────────────────
+      - name: Update nightly release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
+          RELEASE_BODY="## Nightly Build
+
+          **Commit:** [\`${{ env.SHORT_SHA }}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+          **Branch:** \`${{ github.ref_name }}\`
+          **Date:** ${{ env.DATE }}
+          **Author:** ${COMMIT_AUTHOR}
+
+          > ${COMMIT_MSG}
+
+          ---
+          ### Installation
+          1. Install [MelonLoader](https://melonloader.com/) for **Restory**
+          2. Drop \`RestoryQOL.dll\` into \`<GamePath>/Mods/\`
+          3. Launch the game
+
+          > ⚠️ This is an **automated nightly build** from the latest commit on \`main\`.
+          > For stable releases, see the [Releases page](${{ github.server_url }}/${{ github.repository }}/releases).
+          "
+
+          # Delete old nightly release + tag if they exist
+          gh release delete nightly --yes --cleanup-tag 2>/dev/null || true
+
+          # Re-create the nightly release
+          gh release create nightly \
+            --title "Nightly Build ($(date -u '+%Y-%m-%d %H:%M UTC'))" \
+            --notes "$RELEASE_BODY" \
+            --prerelease \
+            --target "${{ github.sha }}" \
+            "${{ env.ARTIFACT_DLL }}#RestoryQOL.dll"
