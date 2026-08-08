@@ -12,10 +12,14 @@ Just made this mod to make the game faster-paced using some QoL improvements (an
 
 * Skip startup logos
 * Automatically go to the device's part store page when you click on the browser while repairing the device
+* Sort the parts shop to match the notebook's part order
 * Highlight missing parts in part store page
 * Reset the competition timer when a competition attempt fails
 * Ultrasonic cleaner finishes instantly
 * Block the ad banners on the in-game browser's shop pages
+* Auto-select the right tool: last used cleaning tool for dirty parts, soldering iron for scorched parts
+* Hold ALT while dropping a part to snap it straight into its socket
+* Hold Z to instantly screw in all visible loose screws, hold X to unscrew them all
 
 **Cheats**
 

@@ -23,12 +23,12 @@ namespace RestoryQOL
         public static MelonPreferences_Entry<bool> AutoPartsPage;
         public static MelonPreferences_Entry<bool> SortPartsByNotebook;
         public static MelonPreferences_Entry<bool> HighlightMissingParts;
-        public static MelonPreferences_Entry<bool> AutoNextScrew;
-        public static MelonPreferences_Entry<bool> AutoNextScrewHole;
-        public static MelonPreferences_Entry<bool> AutoRotateToScrew;
+        public static MelonPreferences_Entry<bool> AutoScrew;
         public static MelonPreferences_Entry<bool> ResetTimerOnFail;
         public static MelonPreferences_Entry<bool> InstantUltrasonic;
+        public static MelonPreferences_Entry<bool> AutoTool;
         public static MelonPreferences_Entry<bool> AdBlock;
+        public static MelonPreferences_Entry<bool> SnapToSocket;
 
         #endregion
 
@@ -54,12 +54,12 @@ namespace RestoryQOL
             AutoPartsPage        = Category.CreateEntry("AutoPartsPage",        true,  "Auto-open parts page for placed device");
             SortPartsByNotebook  = Category.CreateEntry("SortPartsByNotebook",  true,  "Sort the parts shop to match the notebook's part order");
             HighlightMissingParts = Category.CreateEntry("HighlightMissingParts", false, "Highlight parts missing from the current device");
-            AutoNextScrew        = Category.CreateEntry("AutoNextScrew",        true,  "Hold SHIFT to jump to the next screw to unscrew");
-            AutoNextScrewHole    = Category.CreateEntry("AutoNextScrewHole",    true,  "Hold CTRL to jump to the next empty screw hole");
-            AutoRotateToScrew    = Category.CreateEntry("AutoRotateToScrew",    true,  "Up to 90 degrees of device auto-rotation when navigating");
+            AutoScrew            = Category.CreateEntry("AutoScrew",            true,  "Hold Z/X to screw in/unscrew all visible screws");
             ResetTimerOnFail     = Category.CreateEntry("ResetTimerOnFail",     true,  "Reset competition timer when a competition attempt fails");
             InstantUltrasonic    = Category.CreateEntry("InstantUltrasonic",    true,  "Ultrasonic cleaner finishes instantly");
+            AutoTool             = Category.CreateEntry("AutoTool",             true,  "Auto-select cleaning tool or soldering iron based on element");
             AdBlock              = Category.CreateEntry("AdBlock",              true,  "Hide cross-promo ad banners on browser shop pages");
+            SnapToSocket         = Category.CreateEntry("SnapToSocket",         true,  "Hold ALT to snap a dropped part into its socket");
             Category.SaveToFile(false);
 
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InfinityMoney));
@@ -70,7 +70,9 @@ namespace RestoryQOL
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsShopPatches));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.ResetTimerOnFail));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InstantUltrasonic));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.AutoTool));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.AdBlock));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.SnapToSocket));
 
             _visible = MenuEnabled.Value;
             LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");
@@ -78,9 +80,12 @@ namespace RestoryQOL
 
         public override void OnUpdate()
         {
-            if (!Input.GetKeyDown(KeyCode.F8)) return;
-            _visible = !_visible;
-            LoggerInstance.Msg("[Menu] F8 toggled -> visible: " + _visible);
+            if (Input.GetKeyDown(KeyCode.F8))
+            {
+                _visible = !_visible;
+                LoggerInstance.Msg("[Menu] F8 toggled -> visible: " + _visible);
+            }
+            Mods.AutoScrew.Run();
         }
 
         public override void OnGUI()
@@ -111,17 +116,17 @@ namespace RestoryQOL
             HighlightMissingParts.Value = GUILayout.Toggle(HighlightMissingParts.Value, " Highlight missing parts");
             ResetTimerOnFail.Value = GUILayout.Toggle(ResetTimerOnFail.Value, " Reset competition timer on fail");
             InstantUltrasonic.Value = GUILayout.Toggle(InstantUltrasonic.Value, " Ultrasonic cleaner finishes instantly");
+            AutoTool.Value = GUILayout.Toggle(AutoTool.Value, " Auto-select tool (dirty: last cleaner, scorched: iron)");
             AdBlock.Value = GUILayout.Toggle(AdBlock.Value, " Block ad banners on shop pages");
+            SnapToSocket.Value = GUILayout.Toggle(SnapToSocket.Value, " Hold ALT: snap dropped part into socket");
 
             GUILayout.Space(8f);
             GUILayout.Label("--- Bug Fix ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             FixSaveHang.Value  = GUILayout.Toggle(FixSaveHang.Value,  " Fix save hang");
 
             GUILayout.Space(8f);
-            GUILayout.Label("--- Screw Navigation ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-            AutoNextScrew.Value     = GUILayout.Toggle(AutoNextScrew.Value,     " Hold SHIFT: jump to next screw to unscrew");
-            AutoNextScrewHole.Value = GUILayout.Toggle(AutoNextScrewHole.Value, " Hold CTRL: jump to next empty screw hole");
-            AutoRotateToScrew.Value = GUILayout.Toggle(AutoRotateToScrew.Value, " Auto-rotate device (up to 90°) when jumping");
+            GUILayout.Label("--- Screws ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
+            AutoScrew.Value = GUILayout.Toggle(AutoScrew.Value, " Hold Z: screw in all / X: unscrew all");
 
             GUILayout.EndVertical();
 
