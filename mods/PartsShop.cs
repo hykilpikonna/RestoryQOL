@@ -64,33 +64,31 @@ namespace RestoryQOL.Mods
                 return null;
             }
 
-            var showMethod = AccessTools.Method(_elementsShopPageType, "Show");
-            if (showMethod == null)
+            // Hook the products panel's list rebuild rather than the page's Show:
+            // rows are created inside UpdateShownProductsList, and any later
+            // filter change (including AutoPartsPage's category selection on
+            // first browser open) rebuilds the list, wiping overlays applied
+            // earlier. Applying highlights/sorting here keeps them intact.
+            var rebuildMethod = AccessTools.Method(_elementsShopProductsPanelType, "UpdateShownProductsList");
+            if (rebuildMethod == null)
             {
-                Core.Instance?.LoggerInstance.Warning("[PartsShop] Could not find GUI_ElementsShopPage.Show; feature disabled.");
+                Core.Instance?.LoggerInstance.Warning("[PartsShop] Could not find GUI_ElementsShopProductsPanel.UpdateShownProductsList; feature disabled.");
                 return null;
             }
-            Core.Instance?.LoggerInstance.Msg("[PartsShop] GUI_ElementsShopPage.Show patched (postfix).");
-            return showMethod;
+            Core.Instance?.LoggerInstance.Msg("[PartsShop] GUI_ElementsShopProductsPanel.UpdateShownProductsList patched (postfix).");
+            return rebuildMethod;
         }
 
         [HarmonyPostfix]
-        public static void ElementsShopPageShow_Postfix(object __instance)
+        public static void UpdateShownProductsList_Postfix(object __instance)
         {
             if (!_resolved || _resolveFailed) return;
 
             try
             {
-                // Only act when the parts page is in ProductsSelection mode.
-                var pageState = Traverse.Create(__instance).Property("CurrentState").GetValue();
-                if (pageState == null) return;
-                var productsSelectionValue = Enum.Parse(pageState.GetType(), "ProductsSelection");
-                if (!Equals(pageState, productsSelectionValue)) return;
-
-                var panel = Traverse.Create(__instance).Property("ProductsPanel").GetValue();
-                if (panel == null) return;
-
-                var filter = Traverse.Create(panel).Property("Filter").GetValue();
+                // __instance is the products panel; the rows have just been
+                // (re)created and attached to the products list.
+                var filter = Traverse.Create(__instance).Property("Filter").GetValue();
                 if (filter == null) return;
 
                 var filterTraverse = Traverse.Create(filter);
@@ -110,7 +108,7 @@ namespace RestoryQOL.Mods
                 var elementsProp = Traverse.Create(deviceInfo).Property("Elements");
                 var deviceOrderedParts = (from object it in (IEnumerable) elementsProp.GetValue() where it != null select it).ToList();
 
-                var panelView = Traverse.Create(panel).Field("view").GetValue();
+                var panelView = Traverse.Create(__instance).Field("view").GetValue();
                 if (panelView == null || !_productPanelViewType.IsInstanceOfType(panelView)) return;
                 var productsListParent = Traverse.Create(panelView).Field("productsListParent").GetValue() as RectTransform;
                 if (productsListParent == null) return;
