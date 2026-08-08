@@ -4,31 +4,22 @@ using HarmonyLib;
 
 namespace RestoryQOL.Mods
 {
-    /// <summary>
-    /// Fixes the save hang by bypassing the texture conversion wait and the
-    /// (very slow) disk-space check. Also shows a "Saving..." label in the
-    /// pause menu when saving is triggered.
-    /// </summary>
-    internal static class SaveFix
+    public static class SaveFixPatches
     {
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Restory.Gameplay.TextureMasks.TextureCacheService),
-            "WaitForAllTexturesConversionCompletion")]
-        private static bool WaitForTexturesPrefix(ref Task __result)
+        [HarmonyPatch(typeof(Restory.Gameplay.TextureMasks.TextureCacheService), "WaitForAllTexturesConversionCompletion")]
+        public static bool WaitForTexturesPrefix(ref Task __result)
         {
             if (!Core.FixSaveHang.Value) return true;
             __result = Task.CompletedTask;
             return false;
         }
-
-        /// <summary>
-        /// The game takes ~20 seconds to query disk space; patch it to always
-        /// return true. Disk space exhaustion is not a realistic failure mode
-        /// for a save file.
-        /// </summary>
+        
+        /// The game takes 20 seconds to query disk space on my device, so patching it to true.
+        /// Not sure why it exists at all, I don't think people will run out of disk space for saving a game...
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Restory.Data.SaveLoad.DiskSpaceService), "IsEnoughDiskSpace")]
-        private static bool DiskSpacePrefix(ref bool __result)
+        public static bool DiskSpacePrefix(ref bool __result)
         {
             if (!Core.FixSaveHang.Value) return true;
             __result = true;
@@ -36,9 +27,8 @@ namespace RestoryQOL.Mods
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Restory.UI.Presenters.PauseMenu.GUI_PauseMenu),
-            "ResolveOnSaveGameClick")]
-        private static void SaveFeedbackPrefix(object __instance)
+        [HarmonyPatch(typeof(Restory.UI.Presenters.PauseMenu.GUI_PauseMenu), "ResolveOnSaveGameClick")]
+        public static void SaveFeedbackPrefix(object __instance)
         {
             if (!Core.SaveFeedback.Value) return;
             try

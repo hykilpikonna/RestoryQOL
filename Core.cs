@@ -58,10 +58,12 @@ namespace RestoryQOL
             AutoRotateToScrew    = Category.CreateEntry("AutoRotateToScrew",    true,  "Up to 90 degrees of device auto-rotation when navigating");
             Category.SaveToFile(false);
 
-            // All patches live in Mods/ and use [HarmonyPatch] annotations
-            // (or TargetMethod() for reflection-resolved types). A single
-            // PatchAll call registers every patch class in this assembly.
-            HarmonyLib.Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), "RestoryQOL");
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InfinityMoney));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.FakeMoneyUI));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.SkipLogos));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.SaveFixPatches));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsPagePatches));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsShopPatches));
 
             _visible = MenuEnabled.Value;
             LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");

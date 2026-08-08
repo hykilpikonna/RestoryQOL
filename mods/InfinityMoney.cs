@@ -3,17 +3,14 @@ using Restory.Gameplay.Inventory;
 
 namespace RestoryQOL.Mods
 {
-    /// <summary>
-    /// Bypasses wallet deduction on purchase — returns success without
-    /// actually removing money from the player's wallet.
-    /// </summary>
-    [HarmonyPatch(typeof(Wallet), nameof(Wallet.TryToRemove))]
-    internal static class InfinityMoney
+    public static class InfinityMoney
     {
         [HarmonyPrefix]
-        private static bool Prefix(ref bool __result)
+        [HarmonyPatch(typeof(Wallet), nameof(Wallet.TryToRemove))]
+        public static bool TryToRemove_Prefix(ref bool __result)
         {
-            if (!Core.InfinityMoney.Value) return true;
+            if (!Core.InfinityMoney.Value)
+                return true;
             __result = true;
             return false;
         }
