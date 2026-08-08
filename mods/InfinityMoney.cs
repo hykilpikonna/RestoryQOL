@@ -9,7 +9,7 @@ namespace RestoryQOL.Mods
         [HarmonyPatch(typeof(Wallet), nameof(Wallet.TryToRemove))]
         public static bool TryToRemove_Prefix(ref bool __result)
         {
-            if (!Core.InfinityMoney.Value)
+            if (!Core.NoDeduction.Value)
                 return true;
             __result = true;
             return false;

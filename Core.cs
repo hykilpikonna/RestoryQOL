@@ -16,11 +16,10 @@ namespace RestoryQOL
 
         public static MelonPreferences_Category Category;
         public static MelonPreferences_Entry<bool> MenuEnabled;
-        public static MelonPreferences_Entry<bool> InfinityMoney;
-        public static MelonPreferences_Entry<bool> FakeMoneyUI;
+        public static MelonPreferences_Entry<bool> NoDeduction;
+        public static MelonPreferences_Entry<bool> InfiniteMoney;
         public static MelonPreferences_Entry<bool> SkipLogos;
         public static MelonPreferences_Entry<bool> FixSaveHang;
-        public static MelonPreferences_Entry<bool> SaveFeedback;
         public static MelonPreferences_Entry<bool> AutoPartsPage;
         public static MelonPreferences_Entry<bool> SortPartsByNotebook;
         public static MelonPreferences_Entry<bool> HighlightMissingParts;
@@ -47,11 +46,10 @@ namespace RestoryQOL
 
             Category             = MelonPreferences.CreateCategory("RestoryQOL");
             MenuEnabled          = Category.CreateEntry("MenuEnabled",          true,  "Start with menu open");
-            InfinityMoney        = Category.CreateEntry("InfinityMoney",        true,  "Bypass wallet deduction on purchase");
-            FakeMoneyUI          = Category.CreateEntry("FakeMoneyUI",          true,  "Fake unlimited money for UI checks");
+            NoDeduction        = Category.CreateEntry("InfinityMoney",        true,  "Bypass wallet deduction on purchase");
+            InfiniteMoney          = Category.CreateEntry("FakeMoneyUI",          true,  "Fake unlimited money for UI checks");
             SkipLogos            = Category.CreateEntry("SkipLogos",            true,  "Skip startup logos");
             FixSaveHang          = Category.CreateEntry("FixSaveHang",          true,  "Fix save hang (skip texture conversion wait)");
-            SaveFeedback         = Category.CreateEntry("SaveFeedback",         true,  "Show 'Saving...' text when saving");
             AutoPartsPage        = Category.CreateEntry("AutoPartsPage",        true,  "Auto-open parts page for placed device");
             SortPartsByNotebook  = Category.CreateEntry("SortPartsByNotebook",  true,  "Sort the parts shop to match the notebook's part order");
             HighlightMissingParts = Category.CreateEntry("HighlightMissingParts", false, "Highlight parts missing from the current device");
@@ -97,39 +95,29 @@ namespace RestoryQOL
         {
             GUILayout.BeginVertical();
 
-            GUILayout.Label("--- Money ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-            InfinityMoney.Value = GUILayout.Toggle(InfinityMoney.Value, " Bypass wallet deduction");
-            FakeMoneyUI.Value   = GUILayout.Toggle(FakeMoneyUI.Value,   " Fake unlimited money (UI)");
+            GUILayout.Label("--- Cheats ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
+            NoDeduction.Value = GUILayout.Toggle(NoDeduction.Value, " Bypass wallet deduction");
+            InfiniteMoney.Value   = GUILayout.Toggle(InfiniteMoney.Value,   " Infinite money");
 
             GUILayout.Space(8f);
-            GUILayout.Label("--- Startup ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
+            GUILayout.Label("--- QoL ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             SkipLogos.Value    = GUILayout.Toggle(SkipLogos.Value,    " Skip startup logos");
             MenuEnabled.Value  = GUILayout.Toggle(MenuEnabled.Value,  " Start with menu open");
-
-            GUILayout.Space(8f);
-            GUILayout.Label("--- Save Fix ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-            FixSaveHang.Value  = GUILayout.Toggle(FixSaveHang.Value,  " Fix save hang (skip texture wait)");
-            SaveFeedback.Value = GUILayout.Toggle(SaveFeedback.Value, " Show 'Saving...' feedback");
-
-            GUILayout.Space(8f);
-            GUILayout.Label("--- Workflow ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             AutoPartsPage.Value       = GUILayout.Toggle(AutoPartsPage.Value,       " Auto-open parts for placed device");
             SortPartsByNotebook.Value = GUILayout.Toggle(SortPartsByNotebook.Value, " Sort parts shop to notebook order");
             HighlightMissingParts.Value = GUILayout.Toggle(HighlightMissingParts.Value, " Highlight missing parts");
+            ResetTimerOnFail.Value = GUILayout.Toggle(ResetTimerOnFail.Value, " Reset competition timer on fail");
+            InstantUltrasonic.Value = GUILayout.Toggle(InstantUltrasonic.Value, " Ultrasonic cleaner finishes instantly");
+
+            GUILayout.Space(8f);
+            GUILayout.Label("--- Bug Fix ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
+            FixSaveHang.Value  = GUILayout.Toggle(FixSaveHang.Value,  " Fix save hang");
 
             GUILayout.Space(8f);
             GUILayout.Label("--- Screw Navigation ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             AutoNextScrew.Value     = GUILayout.Toggle(AutoNextScrew.Value,     " Hold SHIFT: jump to next screw to unscrew");
             AutoNextScrewHole.Value = GUILayout.Toggle(AutoNextScrewHole.Value, " Hold CTRL: jump to next empty screw hole");
             AutoRotateToScrew.Value = GUILayout.Toggle(AutoRotateToScrew.Value, " Auto-rotate device (up to 90°) when jumping");
-
-            GUILayout.Space(8f);
-            GUILayout.Label("--- Competition ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-            ResetTimerOnFail.Value = GUILayout.Toggle(ResetTimerOnFail.Value, " Reset competition timer on fail");
-
-            GUILayout.Space(8f);
-            GUILayout.Label("--- Equipment ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-            InstantUltrasonic.Value = GUILayout.Toggle(InstantUltrasonic.Value, " Ultrasonic cleaner finishes instantly");
 
             GUILayout.EndVertical();
 

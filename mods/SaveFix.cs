@@ -25,24 +25,5 @@ namespace RestoryQOL.Mods
             __result = true;
             return false;
         }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(Restory.UI.Presenters.PauseMenu.GUI_PauseMenu), "ResolveOnSaveGameClick")]
-        public static void SaveFeedbackPrefix(object __instance)
-        {
-            if (!Core.SaveFeedback.Value) return;
-            try
-            {
-                var view = Traverse.Create(__instance).Field("view").GetValue();
-                if (view == null) return;
-                var saveInfo = Traverse.Create(view).Field("saveInfoText").GetValue();
-                if (saveInfo == null) return;
-                Traverse.Create(saveInfo).Property("text").SetValue("Saving...");
-            }
-            catch (Exception ex)
-            {
-                Core.Instance.LoggerInstance.Warning($"[SaveFix] {ex.Message}");
-            }
-        }
     }
 }
