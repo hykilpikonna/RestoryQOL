@@ -54,7 +54,7 @@ namespace RestoryQOL
             SkipLogos            = Category.CreateEntry("SkipLogos",            true,  "Skip startup logos");
             FixSaveHang          = Category.CreateEntry("FixSaveHang",          true,  "Fix save hang (skip texture conversion wait)");
             AutoPartsPage        = Category.CreateEntry("AutoPartsPage",        true,  "Auto-open parts page for placed device");
-            SortPartsByNotebook  = Category.CreateEntry("SortPartsByNotebook",  true,  "Sort the parts shop to match the notebook's part order");
+SortPartsByNotebook = Category.CreateEntry("SortPartsByNotebook", true, "Sort the parts shop to match assembly order (per device; non-device tab groups by device then assembly order)");
             HighlightMissingParts = Category.CreateEntry("HighlightMissingParts", false, "Highlight parts missing from the current device");
             AutoScrew            = Category.CreateEntry("AutoScrew",            true,  "Hold Z/X to screw in/unscrew all visible screws");
             ResetTimerOnFail     = Category.CreateEntry("ResetTimerOnFail",     true,  "Reset competition timer when a competition attempt fails");
@@ -112,29 +112,29 @@ namespace RestoryQOL
             GUILayout.Label("--- Cheats ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             NoDeduction.Value = GUILayout.Toggle(NoDeduction.Value, " Bypass wallet deduction");
             InfiniteMoney.Value   = GUILayout.Toggle(InfiniteMoney.Value,   " Infinite money");
+            ResetTimerOnFail.Value = GUILayout.Toggle(ResetTimerOnFail.Value, " Reset competition timer on fail");
+            InstantUltrasonic.Value = GUILayout.Toggle(InstantUltrasonic.Value, " Ultrasonic cleaner finishes instantly");
 
             GUILayout.Space(8f);
             GUILayout.Label("--- QoL ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             SkipLogos.Value    = GUILayout.Toggle(SkipLogos.Value,    " Skip startup logos");
             MenuEnabled.Value  = GUILayout.Toggle(MenuEnabled.Value,  " Start with menu open");
-            AutoPartsPage.Value       = GUILayout.Toggle(AutoPartsPage.Value,       " Auto-open parts for placed device");
-            SortPartsByNotebook.Value = GUILayout.Toggle(SortPartsByNotebook.Value, " Sort parts shop to notebook order");
             HighlightMissingParts.Value = GUILayout.Toggle(HighlightMissingParts.Value, " Highlight missing parts");
-            ResetTimerOnFail.Value = GUILayout.Toggle(ResetTimerOnFail.Value, " Reset competition timer on fail");
-            InstantUltrasonic.Value = GUILayout.Toggle(InstantUltrasonic.Value, " Ultrasonic cleaner finishes instantly");
+            AutoPartsPage.Value       = GUILayout.Toggle(AutoPartsPage.Value,       " Auto-open parts for placed device");
+            SortPartsByNotebook.Value = GUILayout.Toggle(SortPartsByNotebook.Value, " Sort parts box by assembly order");
             AutoTool.Value = GUILayout.Toggle(AutoTool.Value, " Auto-select tool (dirty: last cleaner, scorched: iron)");
             AdBlock.Value = GUILayout.Toggle(AdBlock.Value, " Block ad banners on shop pages");
+            
+            GUILayout.Space(8f);
+            GUILayout.Label("--- Hot Keys ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             SnapToSocket.Value = GUILayout.Toggle(SnapToSocket.Value, " Hold ALT: snap dropped part into socket");
             QuickDispose.Value = GUILayout.Toggle(QuickDispose.Value, " Hold SHIFT on drop: auto-route part by condition");
             RefreshMarketplace.Value = GUILayout.Toggle(RefreshMarketplace.Value, " CTRL+R: refresh marketplace");
+            AutoScrew.Value = GUILayout.Toggle(AutoScrew.Value, " Hold Z: screw in all / X: unscrew all");
 
             GUILayout.Space(8f);
             GUILayout.Label("--- Bug Fix ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             FixSaveHang.Value  = GUILayout.Toggle(FixSaveHang.Value,  " Fix save hang");
-
-            GUILayout.Space(8f);
-            GUILayout.Label("--- Screws ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-            AutoScrew.Value = GUILayout.Toggle(AutoScrew.Value, " Hold Z: screw in all / X: unscrew all");
 
             GUILayout.EndVertical();
 
