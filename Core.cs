@@ -27,6 +27,7 @@ namespace RestoryQOL
         public static MelonPreferences_Entry<bool> AutoNextScrew;
         public static MelonPreferences_Entry<bool> AutoNextScrewHole;
         public static MelonPreferences_Entry<bool> AutoRotateToScrew;
+        public static MelonPreferences_Entry<bool> ResetTimerOnFail;
 
         #endregion
 
@@ -56,6 +57,7 @@ namespace RestoryQOL
             AutoNextScrew        = Category.CreateEntry("AutoNextScrew",        true,  "Hold SHIFT to jump to the next screw to unscrew");
             AutoNextScrewHole    = Category.CreateEntry("AutoNextScrewHole",    true,  "Hold CTRL to jump to the next empty screw hole");
             AutoRotateToScrew    = Category.CreateEntry("AutoRotateToScrew",    true,  "Up to 90 degrees of device auto-rotation when navigating");
+            ResetTimerOnFail     = Category.CreateEntry("ResetTimerOnFail",     true,  "Reset competition timer when a competition attempt fails");
             Category.SaveToFile(false);
 
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InfinityMoney));
@@ -64,6 +66,7 @@ namespace RestoryQOL
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.SaveFixPatches));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsPagePatches));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.PartsShopPatches));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.ResetTimerOnFail));
 
             _visible = MenuEnabled.Value;
             LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");
@@ -116,6 +119,10 @@ namespace RestoryQOL
             AutoNextScrew.Value     = GUILayout.Toggle(AutoNextScrew.Value,     " Hold SHIFT: jump to next screw to unscrew");
             AutoNextScrewHole.Value = GUILayout.Toggle(AutoNextScrewHole.Value, " Hold CTRL: jump to next empty screw hole");
             AutoRotateToScrew.Value = GUILayout.Toggle(AutoRotateToScrew.Value, " Auto-rotate device (up to 90°) when jumping");
+
+            GUILayout.Space(8f);
+            GUILayout.Label("--- Competition ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
+            ResetTimerOnFail.Value = GUILayout.Toggle(ResetTimerOnFail.Value, " Reset competition timer on fail");
 
             GUILayout.EndVertical();
 
