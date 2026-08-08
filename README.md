@@ -63,4 +63,14 @@ Below are some screenshots of the features
 <img src="docs/save-stuck-logs.png" alt="screenshot of debug logs during save getting stuck showing that the disk size detection is the issue." width="600">
 </details>
 
+<details>
+<summary>Ad block</summary>
+<img src="docs/adblock.png" alt="screenshot of ad block being enabled" width="600">
+<img src="docs/adblock-off.png" alt="screenshot of ad block being disabled" width="600">
+</details>
 
+<details>
+<summary>Sort parts box</summary>
+<img src="docs/sort-parts-box-1.png" alt="screenshot of parts box sorted" width="600">
+<img src="docs/sort-parts-box-2.png" alt="screenshot of parts box sorted" width="600">
+</details>
