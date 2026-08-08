@@ -1,0 +1,73 @@
+name: Build & Attach Release Artifact
+
+on:
+  release:
+    types: [published]   # Fires when a release is published (not draft)
+
+permissions:
+  contents: write        # Needed to upload release assets
+
+jobs:
+  build:
+    name: Build RestoryQOL for release ${{ github.event.release.tag_name }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ─────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.target_commitish }}
+
+      # ── 2. Set up .NET ──────────────────────────────────────────────────────
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.x"
+
+      # ── 3. Cache NuGet packages ─────────────────────────────────────────────
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-
+
+      # ── 4. Build StubGenerator ───────────────────────────────────────────────
+      - name: Build StubGenerator
+        run: dotnet build tools/StubGenerator/StubGenerator.csproj -c Release -o tools/StubGenerator/out
+
+      # ── 5. Set up stub game layout ───────────────────────────────────────────
+      - name: Set up stub game layout
+        run: |
+          GAME_PATH="$GITHUB_WORKSPACE/libs/game"
+          mkdir -p "$GAME_PATH/Restory_Data/Managed"
+          mkdir -p "$GAME_PATH/MelonLoader/net35"
+          mkdir -p "$GAME_PATH/Mods"
+          for dll in libs/Managed/*.dll; do
+            ln -f "$dll" "$GAME_PATH/Restory_Data/Managed/$(basename $dll)"
+          done
+          for dll in libs/MelonLoader/*.dll; do
+            ln -f "$dll" "$GAME_PATH/MelonLoader/net35/$(basename $dll)"
+          done
+          cat > Directory.Build.props << EOF
+          <Project>
+            <PropertyGroup>
+              <GamePath>$GAME_PATH</GamePath>
+            </PropertyGroup>
+          </Project>
+          EOF
+
+      # ── 6. Build the mod ─────────────────────────────────────────────────────
+      - name: Build RestoryQOL (Release)
+        run: dotnet build RestoryQOL.csproj -c Release -o build/output
+
+      # ── 7. Upload artifact to the GitHub release ─────────────────────────────
+      - name: Upload to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          gh release upload "$TAG" \
+            build/output/RestoryQOL.dll#RestoryQOL.dll \
+            --clobber
