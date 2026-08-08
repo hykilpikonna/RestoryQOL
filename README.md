@@ -4,7 +4,7 @@ Happy launch day!
 
 Just made this mod to make the game faster-paced using some QoL improvements (and some bug fixes for the game since it just launched)
 
-<img src="docs/menu.png" alt="screenshot of the main menu" width="300">
+<img src="docs/menu.png" alt="screenshot of the main menu">
 
 ## Features
 
@@ -22,7 +22,6 @@ Just made this mod to make the game faster-paced using some QoL improvements (an
 
 * Fix the game hangs for ~20 seconds every time I save
 
-
 ## Installation
 
 1. Install [MelonLoader](https://melonwiki.xyz)
@@ -36,6 +35,11 @@ Below are some screenshots of the features
 <details>
 <summary>Infinite money / Bypass wallet deduction</summary>
 <img src="docs/infinite-money.png" alt="screenshot of infinite money feature" width="600">
+</details>
+
+<details>
+<summary>Highlight missing parts</summary>
+<img src="docs/highlight-missing-parts.png" alt="screenshot of missing parts being highlighted" width="600">
 </details>
 
 <details>
