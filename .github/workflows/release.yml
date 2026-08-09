@@ -3,6 +3,12 @@ name: Build & Attach Release Artifact
 on:
   release:
     types: [published]   # Fires when a release is published (not draft)
+  workflow_dispatch:     # Manual trigger, e.g. to (re)build assets for an existing release
+    inputs:
+      tag:
+        description: "Tag of the existing release to attach artifacts to (e.g. 1.0.0). Leave empty to use the current ref."
+        required: false
+        type: string
 
 permissions:
   contents: write        # Needed to upload release assets
@@ -14,15 +20,19 @@ env:
 
 jobs:
   build:
-    name: Build RestoryQOL for release ${{ github.event.release.tag_name }}
+    name: Build RestoryQOL for release ${{ github.event.release.tag_name || github.event.inputs.tag }}
     runs-on: ubuntu-latest
+    env:
+      # Tag to attach artifacts to: the value from a release publish, or the
+      # manually-supplied tag when dispatched.
+      RELEASE_TAG: ${{ github.event.release.tag_name || github.event.inputs.tag }}
 
     steps:
       # ── 1. Checkout ─────────────────────────────────────────────────────────
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.target_commitish }}
+          ref: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || github.event.release.target_commitish }}
 
       # ── 2. Set up .NET ──────────────────────────────────────────────────────
       - name: Set up .NET
@@ -102,8 +112,7 @@ jobs:
 
       - name: Package override archive
         run: |
-          TAG="${{ github.event.release.tag_name }}"
-          ARCHIVE="RestoryQOL-${TAG}-full-override.zip"
+          ARCHIVE="RestoryQOL-${RELEASE_TAG}-full-override.zip"
           ( cd overlay && zip -r "../${ARCHIVE}" . )
           ls -la "$ARCHIVE"
           echo "ARCHIVE=${GITHUB_WORKSPACE}/${ARCHIVE}" >> $GITHUB_ENV
@@ -114,8 +123,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="${{ github.event.release.tag_name }}"
-          gh release upload "$TAG" \
+          gh release upload "${RELEASE_TAG}" \
             build/output/RestoryQOL.dll#RestoryQOL.dll \
             "$ARCHIVE" \
             --clobber
