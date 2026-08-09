@@ -7,6 +7,11 @@ on:
 permissions:
   contents: write      # Needed to create/update releases and push tags
 
+env:
+  # Pin the exact MelonLoader the game is tested against (matches the version
+  # the mod references: net35). Bump this when you update MelonLoader in-game.
+  MELONLOADER_VERSION: v0.7.3
+
 jobs:
   build:
     name: Build RestoryQOL
@@ -135,15 +140,59 @@ jobs:
           echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_ENV
           echo "DATE=${DATE}" >> $GITHUB_ENV
 
-      # ── 9. Upload build artifact (always, for every branch) ──────────────────
+      # ── 9. Assemble the full override archive (MelonLoader built in) ─────────
+      #
+      # The "override" zip is a drop-in overlay for the game root:
+      #   version.dll                       <- the loader bootstrap
+      #   MelonLoader/                      <- full MelonLoader runtime
+      #   Mods/RestoryQOL.dll               <- the mod
+      # A user extracts it over <GamePath> and the game is modded — no separate
+      # MelonLoader installation needed.
+      - name: Download & extract MelonLoader
+        run: |
+          ML_URL="https://github.com/LavaGang/MelonLoader/releases/download/${MELONLOADER_VERSION}/MelonLoader.x64.zip"
+          echo "Downloading ${ML_URL}"
+          curl -fsSL -o /tmp/MelonLoader.zip "$ML_URL"
+          mkdir -p staging
+          unzip -o -q /tmp/MelonLoader.zip -d staging
+          echo "Populated:"
+          ls staging
+
+      - name: Assemble overlay
+        run: |
+          OVERLAY="$GITHUB_WORKSPACE/overlay"
+          mkdir -p "$OVERLAY/Mods"
+          # Bring in the mod (and its Debug symbols if present)
+          cp build/output/RestoryQOL.dll "$OVERLAY/Mods/RestoryQOL.dll"
+          if [ -f "build/output/RestoryQOL.pdb" ]; then
+            cp build/output/RestoryQOL.pdb "$OVERLAY/Mods/RestoryQOL.pdb"
+          fi
+          cp README.md "$OVERLAY/README.md" || true
+          # Merge the MelonLoader layout in
+          cp -r staging/* "$OVERLAY/"
+          echo "Overlay contents:"
+          find "$OVERLAY" -maxdepth 2 | sort
+
+      - name: Package override archive
+        run: |
+          SHORT_SHA="${DATE}-${SHORT_SHA}"
+          ARCHIVE="RestoryQOL-nightly-${SHORT_SHA}-full-override.zip"
+          ( cd overlay && zip -r "../${ARCHIVE}" . )
+          cp "${ARCHIVE}" "dist/${ARCHIVE}"
+          echo "ARCHIVE_NAME=${ARCHIVE}" >> $GITHUB_ENV
+          echo "ARCHIVE_PATH=${ARCHIVE}" >> $GITHUB_ENV
+
+      # ── 10. Upload build artifact (always, for every branch) ─────────────────
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: RestoryQOL-${{ env.DATE }}-${{ env.SHORT_SHA }}
-          path: dist/RestoryQOL.dll
+          path: |
+            dist/RestoryQOL.dll
+            dist/*-full-override.zip
           retention-days: 30
 
-      # ── 10. Update nightly release (main branch only) ────────────────────────
+      # ── 11. Update nightly release (main branch only) ────────────────────────
       - name: Update nightly release
         if: github.ref == 'refs/heads/main'
         env:
@@ -162,6 +211,12 @@ jobs:
 
           ---
           ### Installation
+          **Option A — Full override (no MelonLoader needed):**
+          1. Download \`${{ env.ARCHIVE_NAME }}\`
+          2. Extract the archive **over** \`<GamePath>\`
+          3. Launch the game
+
+          **Option B — Bare DLL (requires MelonLoader):**
           1. Install [MelonLoader](https://melonloader.com/) for **Restory**
           2. Drop \`RestoryQOL.dll\` into \`<GamePath>/Mods/\`
           3. Launch the game
@@ -179,4 +234,5 @@ jobs:
             --notes "$RELEASE_BODY" \
             --prerelease \
             --target "${{ github.sha }}" \
-            "${{ env.ARTIFACT_DLL }}#RestoryQOL.dll"
+            "${{ env.ARTIFACT_DLL }}#RestoryQOL.dll" \
+            "dist/${{ env.ARCHIVE_PATH }}#RestoryQOL-full-override.zip"

@@ -7,6 +7,11 @@ on:
 permissions:
   contents: write        # Needed to upload release assets
 
+env:
+  # Pin the exact MelonLoader the game is tested against (matches the version
+  # the mod references: net35). Bump this when you update MelonLoader in-game.
+  MELONLOADER_VERSION: v0.7.3
+
 jobs:
   build:
     name: Build RestoryQOL for release ${{ github.event.release.tag_name }}
@@ -62,7 +67,49 @@ jobs:
       - name: Build RestoryQOL (Release)
         run: dotnet build RestoryQOL.csproj -c Release -o build/output
 
-      # ── 7. Upload artifact to the GitHub release ─────────────────────────────
+      # ── 7. Assemble the full override archive (MelonLoader built in) ────────
+      #
+      # The "override" zip is a drop-in overlay for the game root:
+      #   version.dll                       <- the loader bootstrap
+      #   MelonLoader/                      <- full MelonLoader runtime
+      #   Mods/RestoryQOL.dll               <- the mod
+      # A user extracts it over <GamePath> and the game is modded — no separate
+      # MelonLoader installation needed.
+      - name: Download & extract MelonLoader
+        run: |
+          ML_URL="https://github.com/LavaGang/MelonLoader/releases/download/${MELONLOADER_VERSION}/MelonLoader.x64.zip"
+          echo "Downloading ${ML_URL}"
+          curl -fsSL -o /tmp/MelonLoader.zip "$ML_URL"
+          mkdir -p staging
+          unzip -o -q /tmp/MelonLoader.zip -d staging
+          echo "Populated:"
+          ls staging
+
+      - name: Assemble overlay
+        run: |
+          OVERLAY="$GITHUB_WORKSPACE/overlay"
+          mkdir -p "$OVERLAY/Mods"
+          # Bring in the mod (and its Debug symbols if present)
+          cp build/output/RestoryQOL.dll "$OVERLAY/Mods/RestoryQOL.dll"
+          if [ -f "build/output/RestoryQOL.pdb" ]; then
+            cp build/output/RestoryQOL.pdb "$OVERLAY/Mods/RestoryQOL.pdb"
+          fi
+          cp README.md "$OVERLAY/README.md" || true
+          # Merge the MelonLoader layout in
+          cp -r staging/* "$OVERLAY/"
+          echo "Overlay contents:"
+          find "$OVERLAY" -maxdepth 2 | sort
+
+      - name: Package override archive
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          ARCHIVE="RestoryQOL-${TAG}-full-override.zip"
+          ( cd overlay && zip -r "../${ARCHIVE}" . )
+          ls -la "$ARCHIVE"
+          echo "ARCHIVE=${GITHUB_WORKSPACE}/${ARCHIVE}" >> $GITHUB_ENV
+          echo "ARCHIVE_NAME=${ARCHIVE}" >> $GITHUB_ENV
+
+      # ── 8. Upload artifacts to the GitHub release ────────────────────────────
       - name: Upload to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,4 +117,5 @@ jobs:
           TAG="${{ github.event.release.tag_name }}"
           gh release upload "$TAG" \
             build/output/RestoryQOL.dll#RestoryQOL.dll \
+            "$ARCHIVE" \
             --clobber
