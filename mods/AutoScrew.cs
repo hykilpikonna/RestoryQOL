@@ -58,7 +58,7 @@ namespace RestoryQOL.Mods
                 if (container == null)
                 {
                     if (keyEdge)
-                        Core.Instance.LoggerInstance.Msg("[AutoScrew] Key held, but no device is placed on the work surface.");
+                        Core.Log.Msg("[AutoScrew] Key held, but no device is placed on the work surface.");
                     return;
                 }
 
@@ -69,7 +69,7 @@ namespace RestoryQOL.Mods
                     if (!_warnedNoTool)
                     {
                         _warnedNoTool = true;
-                        Core.Instance.LoggerInstance.Warning("[AutoScrew] No unscrewing tool available (buy/equip a screwdriver first).");
+                        Core.Log.Warning("[AutoScrew] No unscrewing tool available (buy/equip a screwdriver first).");
                     }
                     return;
                 }
@@ -141,10 +141,10 @@ namespace RestoryQOL.Mods
                 }
 
                 if (acted > 0)
-                    Core.Instance.LoggerInstance.Msg(
+                    Core.Log.Msg(
                         $"[AutoScrew] {(unscrew ? "Unscrewed" : "Screwed in")} {acted} screw(s).");
                 else if (keyEdge)
-                    Core.Instance.LoggerInstance.Msg(
+                    Core.Log.Msg(
                         $"[AutoScrew] Nothing to do: {total} screw(s) found " +
                         $"({alreadyDone} already {(unscrew ? "loose" : "tightened")}, {blocked} blocked by a panel, " +
                         $"{busy} mid-animation, {noTweener} without tweener).");
@@ -154,7 +154,7 @@ namespace RestoryQOL.Mods
                 if (UnityEngine.Time.unscaledTime - _lastErrorLogTime > 2f)
                 {
                     _lastErrorLogTime = UnityEngine.Time.unscaledTime;
-                    Core.Instance.LoggerInstance.Warning($"[AutoScrew] {ex}");
+                    Core.Log.Warning($"[AutoScrew] {ex}");
                 }
             }
         }

@@ -45,17 +45,17 @@ namespace RestoryQOL.Mods
 
             if (!_resolved)
             {
-                Core.Instance?.LoggerInstance.Warning("[PartsBoxSort] Game types not found; feature disabled.");
+                Core.Log.Warning("[PartsBoxSort] Game types not found; feature disabled.");
                 return null;
             }
 
             var sortItems = AccessTools.Method(_inventoryPanelType, "SortItems");
             if (sortItems == null)
             {
-                Core.Instance?.LoggerInstance.Warning("[PartsBoxSort] InventoryPanel.SortItems not found; feature disabled.");
+                Core.Log.Warning("[PartsBoxSort] InventoryPanel.SortItems not found; feature disabled.");
                 return null;
             }
-            Core.Instance?.LoggerInstance.Msg("[PartsBoxSort] InventoryPanel.SortItems patched (postfix).");
+            Core.Log.Msg("[PartsBoxSort] InventoryPanel.SortItems patched (postfix).");
             return sortItems;
         }
 
@@ -71,7 +71,7 @@ namespace RestoryQOL.Mods
             }
             catch (Exception ex)
             {
-                Core.Instance?.LoggerInstance.Warning($"[PartsBox] {ex}");
+                Core.Log.Warning($"[PartsBox] {ex}");
             }
         }
 
@@ -198,7 +198,7 @@ namespace RestoryQOL.Mods
             {
                 return null;
             }
-            Core.Instance?.LoggerInstance.Msg("[PartsBoxSort] InventoryPanel.UpdateItems patched (postfix).");
+            Core.Log.Msg("[PartsBoxSort] InventoryPanel.UpdateItems patched (postfix).");
             return sortMethod;
         }
 
@@ -214,7 +214,7 @@ namespace RestoryQOL.Mods
             }
             catch (Exception ex)
             {
-                Core.Instance?.LoggerInstance.Warning($"[PartsBox] {ex}");
+                Core.Log.Warning($"[PartsBox] {ex}");
             }
         }
     }

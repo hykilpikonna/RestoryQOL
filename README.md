@@ -35,13 +35,22 @@ Just made this mod to make the game faster-paced using some QoL improvements (an
 
 **Bug Fixes**
 
-* Fix the game hangs for ~20 seconds every time I save
+* ~~Fix the game hangs for ~20 seconds every time I save~~ Fixed by game update
 
 ## Installation
 
+### Using MelonLoader (Recommended)
+
 1. Install [MelonLoader](https://melonwiki.xyz)
-2. Download the [Latest Release](./Releases) and put it in the `Mods` folder in game files
-3. Launch the game 
+2. Download the [Latest Release](./Releases) and put the dll in the `Mods` folder in game files
+3. Launch the game
+
+### Using BepInEx 6
+
+1. Install [BepInEx 6](https://docs.bepinex.dev/articles/user_guide/installation/index.html#where-to-download-bepinex).  
+  Make sure you download "bleeding-edge build" from BepisBuilds. The BepInEx 5.4 or 6.0.0-pre.2 from Github Actions is too old and doesn't support Unity 6000!!!
+2. Download the [Latest Release](./Releases) and put the dll in the `BepInEx/plugins` folder in game files
+3. Launch the game
 
 ## Screenshots
 

@@ -18,7 +18,7 @@ namespace RestoryQOL.Mods
 
             try
             {
-                var log = Core.Instance.LoggerInstance;
+                var log = Core.Log;
                 var gameAsm = typeof(Wallet).Assembly;
 
                 var deviceService = UnityEngine.Object.FindAnyObjectByType(
@@ -96,7 +96,7 @@ namespace RestoryQOL.Mods
             }
             catch (Exception ex)
             {
-                Core.Instance.LoggerInstance.Warning($"[PartsPage] {ex}");
+                Core.Log.Warning($"[PartsPage] {ex}");
             }
         }
     }

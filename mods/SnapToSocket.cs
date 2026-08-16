@@ -43,11 +43,11 @@ namespace RestoryQOL.Mods
                 if (nearest == null) return;
 
                 Traverse.Create(assembleController).Property("SelectedSocket").SetValue(nearest);
-                Core.Instance.LoggerInstance.Msg($"[SnapToSocket] Snapped '{element.name}' into socket '{nearest.name}'.");
+                Core.Log.Msg($"[SnapToSocket] Snapped '{element.name}' into socket '{nearest.name}'.");
             }
             catch (Exception ex)
             {
-                Core.Instance.LoggerInstance.Warning($"[SnapToSocket] {ex}");
+                Core.Log.Warning($"[SnapToSocket] {ex}");
             }
         }
     }

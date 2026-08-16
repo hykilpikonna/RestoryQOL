@@ -29,7 +29,7 @@ namespace RestoryQOL.Mods
             }
             catch (Exception ex)
             {
-                Core.Instance.LoggerInstance.Warning($"[RefreshMarketplace] {ex}");
+                Core.Log.Warning($"[RefreshMarketplace] {ex}");
             }
         }
 
@@ -39,7 +39,7 @@ namespace RestoryQOL.Mods
             var supplier = UnityEngine.Object.FindAnyObjectByType<DeviceShopSupplier>();
             if (shopsService == null || supplier == null)
             {
-                Core.Instance.LoggerInstance.Msg("[RefreshMarketplace] Shop not available yet.");
+                Core.Log.Msg("[RefreshMarketplace] Shop not available yet.");
                 return;
             }
 
@@ -71,7 +71,7 @@ namespace RestoryQOL.Mods
             if (panel != null && panel.isActiveAndEnabled)
                 panel.Show();
 
-            Core.Instance.LoggerInstance.Msg(
+            Core.Log.Msg(
                 $"[RefreshMarketplace] Refreshed: removed {lots.Count}, now {shopsService.Lots.Count} lot(s).");
         }
 

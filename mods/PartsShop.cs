@@ -60,7 +60,7 @@ namespace RestoryQOL.Mods
 
             if (!_resolved)
             {
-                Core.Instance?.LoggerInstance.Warning("[PartsShop] One or more game types not found; feature disabled.");
+                Core.Log.Warning("[PartsShop] One or more game types not found; feature disabled.");
                 return null;
             }
 
@@ -72,10 +72,10 @@ namespace RestoryQOL.Mods
             var rebuildMethod = AccessTools.Method(_elementsShopProductsPanelType, "UpdateShownProductsList");
             if (rebuildMethod == null)
             {
-                Core.Instance?.LoggerInstance.Warning("[PartsShop] Could not find GUI_ElementsShopProductsPanel.UpdateShownProductsList; feature disabled.");
+                Core.Log.Warning("[PartsShop] Could not find GUI_ElementsShopProductsPanel.UpdateShownProductsList; feature disabled.");
                 return null;
             }
-            Core.Instance?.LoggerInstance.Msg("[PartsShop] GUI_ElementsShopProductsPanel.UpdateShownProductsList patched (postfix).");
+            Core.Log.Msg("[PartsShop] GUI_ElementsShopProductsPanel.UpdateShownProductsList patched (postfix).");
             return rebuildMethod;
         }
 
@@ -132,7 +132,7 @@ namespace RestoryQOL.Mods
             }
             catch (Exception ex)
             {
-                Core.Instance.LoggerInstance.Warning($"[PartsShop] {ex}");
+                Core.Log.Warning($"[PartsShop] {ex}");
             }
         }
 

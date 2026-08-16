@@ -66,7 +66,7 @@ namespace RestoryQOL.Mods
             }
             catch (Exception ex)
             {
-                Core.Instance.LoggerInstance.Warning($"[QuickDispose] {ex}");
+                Core.Log.Warning($"[QuickDispose] {ex}");
                 return true; // on error, fall back to vanilla behavior
             }
         }
@@ -114,7 +114,7 @@ namespace RestoryQOL.Mods
                 return;
             }
 
-            Core.Instance.LoggerInstance.Msg("[QuickDispose] No shredder or trash can available; dropped normally.");
+            Core.Log.Msg("[QuickDispose] No shredder or trash can available; dropped normally.");
         }
 
         /// <summary>Ultrasonic bath first, manual cleaner as fallback.</summary>
@@ -200,7 +200,7 @@ namespace RestoryQOL.Mods
             var sceneContextType = Type.GetType("Zenject.SceneContext, Zenject");
             if (sceneContextType == null)
             {
-                Core.Instance.LoggerInstance.Warning($"[QuickDispose] SceneContext type not found resolving {typeof(T).Name}.");
+                Core.Log.Warning($"[QuickDispose] SceneContext type not found resolving {typeof(T).Name}.");
                 return null;
             }
 

@@ -42,11 +42,11 @@ namespace RestoryQOL.Mods
                         .GetValue();
                 }
 
-                Core.Instance.LoggerInstance.Msg("[ResetTimerOnFail] Competition timer reset to 0.");
+                Core.Log.Msg("[ResetTimerOnFail] Competition timer reset to 0.");
             }
             catch (Exception ex)
             {
-                Core.Instance.LoggerInstance.Warning($"[ResetTimerOnFail] {ex}");
+                Core.Log.Warning($"[ResetTimerOnFail] {ex}");
             }
         }
     }

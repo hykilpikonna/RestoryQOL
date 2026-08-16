@@ -65,7 +65,7 @@ namespace RestoryQOL.Mods
             }
             catch (Exception ex)
             {
-                Core.Instance.LoggerInstance.Warning($"[AutoTool] {ex}");
+                Core.Log.Warning($"[AutoTool] {ex}");
             }
         }
 
@@ -87,7 +87,7 @@ namespace RestoryQOL.Mods
             }
             catch (Exception ex)
             {
-                Core.Instance.LoggerInstance.Warning($"[AutoTool] {ex}");
+                Core.Log.Warning($"[AutoTool] {ex}");
             }
         }
 

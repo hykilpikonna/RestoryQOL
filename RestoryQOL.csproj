@@ -16,6 +16,33 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);RestorySrc\**\*;tools\**\*</DefaultItemExcludes>
     <!-- Unity 6000 assemblies have an indirect dependency on System.EnterpriseServices v4.0 -->
     <NoWarn>$(NoWarn);MSB3258</NoWarn>
+
+    <!-- Which mod loader to build for. Defaults to MelonLoader.
+         Use -p:RestoryLoader=BepInEx to build the BepInEx flavor. -->
+    <RestoryLoader Condition="'$(RestoryLoader)' == ''">MelonLoader</RestoryLoader>
+    <BepInExPath Condition="'$(BepInExPath)' == ''">$(GamePath)\BepInEx</BepInExPath>
+    <DefineConstants Condition="'$(RestoryLoader)' == 'MelonLoader'">$(DefineConstants);MELONLOADER</DefineConstants>
+    <DefineConstants Condition="'$(RestoryLoader)' == 'BepInEx'">$(DefineConstants);BEPINEX</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Resolve the BepInEx 5 vs 6 core assembly names based on what is installed. -->
+  <Choose>
+    <When Condition="Exists('$(BepInExPath)\core\BepInEx.Core.dll')">
+      <PropertyGroup>
+        <BepInExCoreDll>$(BepInExPath)\core\BepInEx.Core.dll</BepInExCoreDll>
+        <BepInExMonoDll>$(BepInExPath)\core\BepInEx.Unity.Mono.dll</BepInExMonoDll>
+        <DefineConstants>$(DefineConstants);BEPINEX6</DefineConstants>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <BepInExCoreDll>$(BepInExPath)\core\BepInEx.dll</BepInExCoreDll>
+        <BepInExMonoDll>$(BepInExPath)\core\BepInEx.Unity.dll</BepInExMonoDll>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <PropertyGroup>
+    <BepInExHarmonyDll>$(BepInExPath)\core\0Harmony.dll</BepInExHarmonyDll>
   </PropertyGroup>
 
   <ItemGroup>
@@ -69,7 +96,10 @@
       <HintPath>$(GamePath)\Restory_Data\Managed\Zenject-usage.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- MelonLoader + Harmony -->
+  </ItemGroup>
+
+  <!-- MelonLoader build: MelonLoader bundles its own Harmony in MelonLoader\net35 -->
+  <ItemGroup Condition="'$(RestoryLoader)' == 'MelonLoader'">
     <Reference Include="MelonLoader">
       <HintPath>$(GamePath)\MelonLoader\net35\MelonLoader.dll</HintPath>
       <Private>false</Private>
@@ -80,8 +110,26 @@
     </Reference>
   </ItemGroup>
 
+  <!-- BepInEx build: reference BepInEx's own core + bundled Harmony -->
+  <ItemGroup Condition="'$(RestoryLoader)' == 'BepInEx'">
+    <Reference Include="BepInEx.Core">
+      <HintPath>$(BepInExCoreDll)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx.Unity.Mono">
+      <HintPath>$(BepInExMonoDll)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(BepInExHarmonyDll)</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" Command="COPY /Y &quot;$(TargetPath)&quot; &quot;$(GamePath)\Mods&quot;" />
-    <Exec Condition="!$([MSBuild]::IsOSPlatform('Windows'))" Command="cp -f &quot;$(TargetPath)&quot; &quot;$(GamePath)/Mods/&quot;" />
+    <Exec Condition="'$(RestoryLoader)' == 'MelonLoader' And $([MSBuild]::IsOSPlatform('Windows'))" Command="COPY /Y &quot;$(TargetPath)&quot; &quot;$(GamePath)\Mods&quot;" />
+    <Exec Condition="'$(RestoryLoader)' == 'MelonLoader' And !$([MSBuild]::IsOSPlatform('Windows'))" Command="cp -f &quot;$(TargetPath)&quot; &quot;$(GamePath)/Mods/&quot;" />
+    <Exec Condition="'$(RestoryLoader)' == 'BepInEx' And $([MSBuild]::IsOSPlatform('Windows'))" Command="COPY /Y &quot;$(TargetPath)&quot; &quot;$(BepInExPath)\plugins&quot;" />
+    <Exec Condition="'$(RestoryLoader)' == 'BepInEx' And !$([MSBuild]::IsOSPlatform('Windows'))" Command="cp -f &quot;$(TargetPath)&quot; &quot;$(BepInExPath)/plugins/&quot;" />
   </Target>
 </Project>

@@ -1,72 +1,74 @@
-using System.Reflection;
 using HarmonyLib;
-using MelonLoader;
 using UnityEngine;
-
-[assembly: MelonInfo(typeof(RestoryQOL.Core), "RestoryQOL", "1.0.0", "Azalea", null)]
-[assembly: MelonGame("Mandragora", "Restory")]
 
 namespace RestoryQOL
 {
-    public class Core : MelonMod
+    /// <summary>
+    /// Loader-agnostic mod core. All patches and per-frame logic live here and
+    /// talk only to the game; the mod loader (MelonLoader or BepInEx) is wired
+    /// in by the bootstrap types in Bootstrap.cs through ILog/IConfigStore.
+    /// </summary>
+    public static class Core
     {
-        public static Core Instance { get; private set; }
-
         #region Config
 
-        public static MelonPreferences_Category Category;
-        public static MelonPreferences_Entry<bool> MenuEnabled;
-        public static MelonPreferences_Entry<bool> NoDeduction;
-        public static MelonPreferences_Entry<bool> InfiniteMoney;
-        public static MelonPreferences_Entry<bool> SkipLogos;
-        public static MelonPreferences_Entry<bool> FixSaveHang;
-        public static MelonPreferences_Entry<bool> AutoPartsPage;
-        public static MelonPreferences_Entry<bool> SortPartsByNotebook;
-        public static MelonPreferences_Entry<bool> HighlightMissingParts;
-        public static MelonPreferences_Entry<bool> AutoScrew;
-        public static MelonPreferences_Entry<bool> ResetTimerOnFail;
-        public static MelonPreferences_Entry<bool> InstantUltrasonic;
-        public static MelonPreferences_Entry<bool> AutoTool;
-        public static MelonPreferences_Entry<bool> AdBlock;
-        public static MelonPreferences_Entry<bool> SnapToSocket;
-        public static MelonPreferences_Entry<bool> QuickDispose;
-        public static MelonPreferences_Entry<bool> RefreshMarketplace;
-        public static MelonPreferences_Entry<bool> SortBoxParts;
+        public static BoolEntry MenuEnabled;
+        public static BoolEntry NoDeduction;
+        public static BoolEntry InfiniteMoney;
+        public static BoolEntry SkipLogos;
+        public static BoolEntry FixSaveHang;
+        public static BoolEntry AutoPartsPage;
+        public static BoolEntry SortPartsByNotebook;
+        public static BoolEntry SortBoxParts;
+        public static BoolEntry HighlightMissingParts;
+        public static BoolEntry AutoScrew;
+        public static BoolEntry ResetTimerOnFail;
+        public static BoolEntry InstantUltrasonic;
+        public static BoolEntry AutoTool;
+        public static BoolEntry AdBlock;
+        public static BoolEntry SnapToSocket;
+        public static BoolEntry QuickDispose;
+        public static BoolEntry RefreshMarketplace;
+
+        #endregion
+
+        #region Logging
+
+        public static ILog Log;
 
         #endregion
 
         #region UI State
 
-        private Rect _windowRect = new Rect(20f, 80f, 340f, 420f);
-        private bool _visible = true;
-        private bool _dragging;
-        private int _windowId = 266622;
+        private static Rect _windowRect = new Rect(20f, 80f, 340f, 420f);
+        private static bool _visible = true;
+        private static bool _dragging;
+        private static int _windowId = 266622;
 
         #endregion
 
-        public override void OnInitializeMelon()
+        public static void Initialize(ILog log, IConfigStore config)
         {
-            Instance = this;
+            Log = log;
 
-            Category             = MelonPreferences.CreateCategory("RestoryQOL");
-            MenuEnabled          = Category.CreateEntry("MenuEnabled",          true,  "Start with menu open");
-            NoDeduction        = Category.CreateEntry("InfinityMoney",        true,  "Bypass wallet deduction on purchase");
-            InfiniteMoney          = Category.CreateEntry("FakeMoneyUI",          true,  "Fake unlimited money for UI checks");
-            SkipLogos            = Category.CreateEntry("SkipLogos",            true,  "Skip startup logos");
-            FixSaveHang          = Category.CreateEntry("FixSaveHang",          true,  "Fix save hang (skip texture conversion wait)");
-            AutoPartsPage        = Category.CreateEntry("AutoPartsPage",        true,  "Auto-open parts page for placed device");
-            SortPartsByNotebook  = Category.CreateEntry("SortPartsByNotebook",         true,  "Sort the parts shop to match the notebook's part order");
-            SortBoxParts         = Category.CreateEntry("SortBoxParts",                true,  "Sort the parts box by device, then assembly order");
-            HighlightMissingParts = Category.CreateEntry("HighlightMissingParts", false, "Highlight parts missing from the current device");
-            AutoScrew            = Category.CreateEntry("AutoScrew",            true,  "Hold Z/X to screw in/unscrew all visible screws");
-            ResetTimerOnFail     = Category.CreateEntry("ResetTimerOnFail",     true,  "Reset competition timer when a competition attempt fails");
-            InstantUltrasonic    = Category.CreateEntry("InstantUltrasonic",    true,  "Ultrasonic cleaner finishes instantly");
-            AutoTool             = Category.CreateEntry("AutoTool",             true,  "Auto-select cleaning tool or soldering iron based on element");
-            AdBlock              = Category.CreateEntry("AdBlock",              true,  "Hide cross-promo ad banners on browser shop pages");
-            SnapToSocket         = Category.CreateEntry("SnapToSocket",         true,  "Hold ALT to snap a dropped part into its socket");
-            QuickDispose         = Category.CreateEntry("QuickDispose",         true,  "Hold SHIFT on drop: broken->shredder, dirty->cleaner, good->parts box");
-            RefreshMarketplace   = Category.CreateEntry("RefreshMarketplace",   true,  "Press CTRL+R to refresh the device shop marketplace");
-            Category.SaveToFile(false);
+            MenuEnabled          = config.CreateBool("MenuEnabled",          true,  "Start with menu open");
+            NoDeduction          = config.CreateBool("InfinityMoney",        false, "Bypass wallet deduction on purchase");
+            InfiniteMoney        = config.CreateBool("FakeMoneyUI",          false, "Fake unlimited money for UI checks");
+            SkipLogos            = config.CreateBool("SkipLogos",            true,  "Skip startup logos");
+            FixSaveHang          = config.CreateBool("FixSaveHang",          true,  "Fix save hang (skip texture conversion wait)");
+            AutoPartsPage        = config.CreateBool("AutoPartsPage",        true,  "Auto-open parts page for placed device");
+            SortPartsByNotebook  = config.CreateBool("SortPartsByNotebook",  true,  "Sort the parts shop to match the notebook's part order");
+            SortBoxParts         = config.CreateBool("SortBoxParts",         true,  "Sort the parts box by device, then assembly order");
+            HighlightMissingParts = config.CreateBool("HighlightMissingParts", false, "Highlight parts missing from the current device");
+            AutoScrew            = config.CreateBool("AutoScrew",            true,  "Hold Z/X to screw in/unscrew all visible screws");
+            ResetTimerOnFail     = config.CreateBool("ResetTimerOnFail",     false, "Reset competition timer when a competition attempt fails");
+            InstantUltrasonic    = config.CreateBool("InstantUltrasonic",    false, "Ultrasonic cleaner finishes instantly");
+            AutoTool             = config.CreateBool("AutoTool",             true,  "Auto-select cleaning tool or soldering iron based on element");
+            AdBlock              = config.CreateBool("AdBlock",              true,  "Hide cross-promo ad banners on browser shop pages");
+            SnapToSocket         = config.CreateBool("SnapToSocket",         true,  "Hold ALT to snap a dropped part into its socket");
+            QuickDispose         = config.CreateBool("QuickDispose",         true,  "Hold SHIFT on drop: broken->shredder, dirty->cleaner, good->parts box");
+            RefreshMarketplace   = config.CreateBool("RefreshMarketplace",   true,  "Press CTRL+R to refresh the device shop marketplace");
+            config.Save();
 
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InfinityMoney));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.FakeMoneyUI));
@@ -84,32 +86,32 @@ namespace RestoryQOL
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.QuickDispose));
 
             _visible = MenuEnabled.Value;
-            LoggerInstance.Msg("Initialized. Press F8 to toggle the menu.");
+            Log.Msg("Initialized. Press F8 to toggle the menu.");
         }
 
-        public override void OnUpdate()
+        public static void RunFrame()
         {
             if (Input.GetKeyDown(KeyCode.F8))
             {
                 _visible = !_visible;
-                LoggerInstance.Msg("[Menu] F8 toggled -> visible: " + _visible);
+                Log.Msg("[Menu] F8 toggled -> visible: " + _visible);
             }
             Mods.AutoScrew.Run();
             Mods.RefreshMarketplace.Run();
         }
 
-        public override void OnGUI()
+        public static void DrawGUI()
         {
             // NOTE: F8 is NOT handled here on purpose. OnGUI fires multiple
             // times per frame and would toggle the menu several times for a
-            // single keypress. It is handled exclusively in OnUpdate(), where
+            // single keypress. It is handled exclusively in RunFrame(), where
             // Input.GetKeyDown fires exactly once per frame.
             if (!_visible) return;
 
             _windowRect = GUI.Window(_windowId, _windowRect, DrawWindow, "RestoryQOL");
         }
 
-        private void DrawWindow(int id)
+        private static void DrawWindow(int id)
         {
             GUILayout.BeginVertical();
 
