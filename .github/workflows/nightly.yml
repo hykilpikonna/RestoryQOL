@@ -222,7 +222,7 @@ jobs:
           3. Launch the game
 
           **Option B — Bare DLL (works with MelonLoader or BepInEx 6):**
-          1. Install [MelonLoader](https://melonloader.com/) **or** [BepInEx 6](https://docs.bepinex.dev/articles/user_guide/installation/index.html#where-to-download-bepinex) for **Restory** — for BepInEx, download the "bleeding-edge build" from BepisBuilds; BepInEx 5.4 or 6.0.0-pre.2 is too old and doesn't support Unity 6000
+          1. Install [MelonLoader](https://melonloader.com/) **or** [BepInEx 6](https://docs.bepinex.dev/articles/user_guide/installation/index.html#where-to-download-bepinex) for **Restory** — for BepInEx, download the 'bleeding-edge build' from BepisBuilds; BepInEx 5.4 or 6.0.0-pre.2 is too old and doesn't support Unity 6000
           2. Drop \`RestoryQOL.dll\` into \`<GamePath>/Mods/\` (MelonLoader) or \`<GamePath>/BepInEx/plugins/\` (BepInEx)
           3. Launch the game
 
