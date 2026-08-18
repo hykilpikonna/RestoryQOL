@@ -86,3 +86,4 @@ crashlytics-build.properties
 # Stub DLLs in libs/ ARE tracked — do not ignore them
 !libs/Managed/*.dll
 !libs/MelonLoader/*.dll
+!libs/BepInEx/core/*.dll
