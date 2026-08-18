@@ -211,7 +211,7 @@ jobs:
 
           ---
           ### Installation
-          **Option A — Full override (no MelonLoader needed):**
+          **Option A — Full override (MelonLoader included):**
           1. Download \`${{ env.ARCHIVE_NAME }}\`
           2. Extract the archive **over** \`<GamePath>\`
           3. Launch the game

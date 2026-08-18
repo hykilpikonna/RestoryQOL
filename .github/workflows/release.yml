@@ -83,8 +83,8 @@ jobs:
       #   version.dll                       <- the loader bootstrap
       #   MelonLoader/                      <- full MelonLoader runtime
       #   Mods/RestoryQOL.dll               <- the mod
-      # A user extracts it over <GamePath> and the game is modded — no separate
-      # MelonLoader installation needed.
+      # A user extracts it over <GamePath> and the game is modded — MelonLoader
+      # is included in the archive.
       - name: Download & extract MelonLoader
         run: |
           ML_URL="https://github.com/LavaGang/MelonLoader/releases/download/${MELONLOADER_VERSION}/MelonLoader.x64.zip"
