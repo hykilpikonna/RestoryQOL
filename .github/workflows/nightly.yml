@@ -73,6 +73,7 @@ jobs:
             "libs/Managed/Zenject-usage.dll"
             "libs/MelonLoader/MelonLoader.dll"
             "libs/MelonLoader/0Harmony.dll"
+            "libs/BepInEx/core/BepInEx.dll"
           )
           missing=0
           for dll in "${required_dlls[@]}"; do
@@ -96,6 +97,7 @@ jobs:
           mkdir -p "$GAME_PATH/Restory_Data/Managed"
           mkdir -p "$GAME_PATH/MelonLoader/net35"
           mkdir -p "$GAME_PATH/Mods"
+          mkdir -p "$GAME_PATH/BepInEx/core"
 
           # Hard-link stubs into the expected layout
           for dll in libs/Managed/*.dll; do
@@ -103,6 +105,9 @@ jobs:
           done
           for dll in libs/MelonLoader/*.dll; do
             ln -f "$dll" "$GAME_PATH/MelonLoader/net35/$(basename $dll)"
+          done
+          for dll in libs/BepInEx/core/*.dll; do
+            ln -f "$dll" "$GAME_PATH/BepInEx/core/$(basename $dll)"
           done
 
           # Write Directory.Build.props with the exact absolute GamePath so
@@ -216,9 +221,9 @@ jobs:
           2. Extract the archive **over** \`<GamePath>\`
           3. Launch the game
 
-          **Option B — Bare DLL (requires MelonLoader):**
-          1. Install [MelonLoader](https://melonloader.com/) for **Restory**
-          2. Drop \`RestoryQOL.dll\` into \`<GamePath>/Mods/\`
+          **Option B — Bare DLL (works with MelonLoader or BepInEx 6):**
+          1. Install [MelonLoader](https://melonloader.com/) **or** [BepInEx 6](https://docs.bepinex.dev/articles/user_guide/installation/index.html#where-to-download-bepinex) for **Restory** — for BepInEx, download the "bleeding-edge build" from BepisBuilds; BepInEx 5.4 or 6.0.0-pre.2 is too old and doesn't support Unity 6000
+          2. Drop \`RestoryQOL.dll\` into \`<GamePath>/Mods/\` (MelonLoader) or \`<GamePath>/BepInEx/plugins/\` (BepInEx)
           3. Launch the game
 
           > ⚠️ This is an **automated nightly build** from the latest commit on \`main\`.

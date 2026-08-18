@@ -17,12 +17,11 @@
     <!-- Unity 6000 assemblies have an indirect dependency on System.EnterpriseServices v4.0 -->
     <NoWarn>$(NoWarn);MSB3258</NoWarn>
 
-    <!-- Which mod loader to build for. Defaults to MelonLoader.
-         Use -p:RestoryLoader=BepInEx to build the BepInEx flavor. -->
-    <RestoryLoader Condition="'$(RestoryLoader)' == ''">MelonLoader</RestoryLoader>
+    <!-- Universal build: one DLL works under MelonLoader or BepInEx.
+         Both entry points (Bootstrap.cs) ship in the same assembly.
+         Fall back to libs/BepInEx stubs when BepInEx isn't installed in the game. -->
     <BepInExPath Condition="'$(BepInExPath)' == ''">$(GamePath)\BepInEx</BepInExPath>
-    <DefineConstants Condition="'$(RestoryLoader)' == 'MelonLoader'">$(DefineConstants);MELONLOADER</DefineConstants>
-    <DefineConstants Condition="'$(RestoryLoader)' == 'BepInEx'">$(DefineConstants);BEPINEX</DefineConstants>
+    <BepInExPath Condition="!Exists('$(BepInExPath)\core') And Exists('$(MSBuildThisFileDirectory)libs\BepInEx\core')">$(MSBuildThisFileDirectory)libs\BepInEx</BepInExPath>
   </PropertyGroup>
 
   <!-- Resolve the BepInEx 5 vs 6 core assembly names based on what is installed. -->
@@ -36,14 +35,12 @@
     </When>
     <Otherwise>
       <PropertyGroup>
+        <!-- BepInEx 5: BaseUnityPlugin + Config + Logging all live in BepInEx.dll -->
         <BepInExCoreDll>$(BepInExPath)\core\BepInEx.dll</BepInExCoreDll>
-        <BepInExMonoDll>$(BepInExPath)\core\BepInEx.Unity.dll</BepInExMonoDll>
+        <BepInExMonoDll>$(BepInExPath)\core\BepInEx.dll</BepInExMonoDll>
       </PropertyGroup>
     </Otherwise>
   </Choose>
-  <PropertyGroup>
-    <BepInExHarmonyDll>$(BepInExPath)\core\0Harmony.dll</BepInExHarmonyDll>
-  </PropertyGroup>
 
   <ItemGroup>
     <!-- net35 reference assemblies from NuGet (offline build support) -->
@@ -98,8 +95,9 @@
     </Reference>
   </ItemGroup>
 
-  <!-- MelonLoader build: MelonLoader bundles its own Harmony in MelonLoader\net35 -->
-  <ItemGroup Condition="'$(RestoryLoader)' == 'MelonLoader'">
+  <!-- MelonLoader + BepInEx are always referenced (universal build).
+       MelonLoader bundles its own Harmony in MelonLoader\net35. -->
+  <ItemGroup>
     <Reference Include="MelonLoader">
       <HintPath>$(GamePath)\MelonLoader\net35\MelonLoader.dll</HintPath>
       <Private>false</Private>
@@ -108,10 +106,6 @@
       <HintPath>$(GamePath)\MelonLoader\net35\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
-  </ItemGroup>
-
-  <!-- BepInEx build: reference BepInEx's own core + bundled Harmony -->
-  <ItemGroup Condition="'$(RestoryLoader)' == 'BepInEx'">
     <Reference Include="BepInEx.Core">
       <HintPath>$(BepInExCoreDll)</HintPath>
       <Private>false</Private>
@@ -120,16 +114,13 @@
       <HintPath>$(BepInExMonoDll)</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="0Harmony">
-      <HintPath>$(BepInExHarmonyDll)</HintPath>
-      <Private>false</Private>
-    </Reference>
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Condition="'$(RestoryLoader)' == 'MelonLoader' And $([MSBuild]::IsOSPlatform('Windows'))" Command="COPY /Y &quot;$(TargetPath)&quot; &quot;$(GamePath)\Mods&quot;" />
-    <Exec Condition="'$(RestoryLoader)' == 'MelonLoader' And !$([MSBuild]::IsOSPlatform('Windows'))" Command="cp -f &quot;$(TargetPath)&quot; &quot;$(GamePath)/Mods/&quot;" />
-    <Exec Condition="'$(RestoryLoader)' == 'BepInEx' And $([MSBuild]::IsOSPlatform('Windows'))" Command="COPY /Y &quot;$(TargetPath)&quot; &quot;$(BepInExPath)\plugins&quot;" />
-    <Exec Condition="'$(RestoryLoader)' == 'BepInEx' And !$([MSBuild]::IsOSPlatform('Windows'))" Command="cp -f &quot;$(TargetPath)&quot; &quot;$(BepInExPath)/plugins/&quot;" />
+    <!-- Copy to the loader that is installed; a bare DLL only works under one loader. -->
+    <Exec Condition="Exists('$(GamePath)\Mods') And $([MSBuild]::IsOSPlatform('Windows'))" Command="COPY /Y &quot;$(TargetPath)&quot; &quot;$(GamePath)\Mods&quot;" />
+    <Exec Condition="Exists('$(GamePath)\Mods') And !$([MSBuild]::IsOSPlatform('Windows'))" Command="cp -f &quot;$(TargetPath)&quot; &quot;$(GamePath)/Mods/&quot;" />
+    <Exec Condition="Exists('$(BepInExPath)\plugins') And $([MSBuild]::IsOSPlatform('Windows'))" Command="COPY /Y &quot;$(TargetPath)&quot; &quot;$(BepInExPath)\plugins&quot;" />
+    <Exec Condition="Exists('$(BepInExPath)\plugins') And !$([MSBuild]::IsOSPlatform('Windows'))" Command="cp -f &quot;$(TargetPath)&quot; &quot;$(BepInExPath)/plugins/&quot;" />
   </Target>
 </Project>

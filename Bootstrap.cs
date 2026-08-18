@@ -1,12 +1,18 @@
-#if !MELONLOADER && !BEPINEX
-#error No mod loader selected. Build with -p:RestoryLoader=MelonLoader or -p:RestoryLoader=BepInEx.
-#endif
-
-#if MELONLOADER
+using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Logging;
 using MelonLoader;
+#if BEPINEX6
+// BepInEx 6 moved BaseUnityPlugin out of the BepInEx namespace.
+using BepInEx.Unity.Mono;
+#endif
 
 [assembly: MelonInfo(typeof(RestoryQOL.MelonLoaderBootstrap), "RestoryQOL", "1.0.0", "Azalea", null)]
 [assembly: MelonGame("Mandragora", "Restory")]
+// Universal build: this assembly also references BepInEx for its BepInEx
+// entry point. Under MelonLoader that reference is intentionally unresolved,
+// so mark it optional or MelonLoader warns (and future versions refuse to load).
+[assembly: MelonOptionalDependencies("BepInEx", "BepInEx.Core", "BepInEx.Unity.Mono")]
 // MelonLoader auto-patches every [HarmonyPatch] class during HarmonyInit, which
 // runs BEFORE OnInitializeMelon. Core.Log is not set yet, so any TargetMethod
 // that logs throws a NullReferenceException, and the attribute-based patches
@@ -17,8 +23,7 @@ using MelonLoader;
 namespace RestoryQOL
 {
     /// <summary>
-    /// MelonLoader entry point. Only compiled into the MelonLoader build
-    /// (-p:RestoryLoader=MelonLoader, the default).
+    /// MelonLoader entry point. Installed with MelonLoader; ignored by BepInEx.
     /// </summary>
     public class MelonLoaderBootstrap : MelonMod
     {
@@ -32,6 +37,22 @@ namespace RestoryQOL
         public override void OnUpdate() => Core.RunFrame();
 
         public override void OnGUI() => Core.DrawGUI();
+    }
+
+    /// <summary>
+    /// BepInEx entry point. Installed with BepInEx; ignored by MelonLoader.
+    /// </summary>
+    [BepInPlugin("aza.restoryqol", "RestoryQOL", "1.0.0")]
+    public class BepInExBootstrap : BaseUnityPlugin
+    {
+        private void Awake()
+        {
+            Core.Initialize(new BepLog(Logger), new BepConfigStore(Config));
+        }
+
+        private void Update() => Core.RunFrame();
+
+        private void OnGUI() => Core.DrawGUI();
     }
 
     internal sealed class MelonLog : ILog
@@ -58,36 +79,6 @@ namespace RestoryQOL
         }
 
         public void Save() => _category.SaveToFile(false);
-    }
-}
-#endif
-
-#if BEPINEX
-using BepInEx;
-using BepInEx.Configuration;
-using BepInEx.Logging;
-#if BEPINEX6
-// BepInEx 6 moved BaseUnityPlugin out of the BepInEx namespace.
-using BepInEx.Unity.Mono;
-#endif
-
-namespace RestoryQOL
-{
-    /// <summary>
-    /// BepInEx entry point. Only compiled into the BepInEx build
-    /// (-p:RestoryLoader=BepInEx).
-    /// </summary>
-    [BepInPlugin("com.azaneko.restoryqol", "RestoryQOL", "1.0.0")]
-    public class BepInExBootstrap : BaseUnityPlugin
-    {
-        private void Awake()
-        {
-            Core.Initialize(new BepLog(Logger), new BepConfigStore(Config));
-        }
-
-        private void Update() => Core.RunFrame();
-
-        private void OnGUI() => Core.DrawGUI();
     }
 
     internal sealed class BepLog : ILog
@@ -119,4 +110,3 @@ namespace RestoryQOL
         }
     }
 }
-#endif

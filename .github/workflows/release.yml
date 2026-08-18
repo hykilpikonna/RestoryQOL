@@ -59,11 +59,15 @@ jobs:
           mkdir -p "$GAME_PATH/Restory_Data/Managed"
           mkdir -p "$GAME_PATH/MelonLoader/net35"
           mkdir -p "$GAME_PATH/Mods"
+          mkdir -p "$GAME_PATH/BepInEx/core"
           for dll in libs/Managed/*.dll; do
             ln -f "$dll" "$GAME_PATH/Restory_Data/Managed/$(basename $dll)"
           done
           for dll in libs/MelonLoader/*.dll; do
             ln -f "$dll" "$GAME_PATH/MelonLoader/net35/$(basename $dll)"
+          done
+          for dll in libs/BepInEx/core/*.dll; do
+            ln -f "$dll" "$GAME_PATH/BepInEx/core/$(basename $dll)"
           done
           cat > Directory.Build.props << EOF
           <Project>
