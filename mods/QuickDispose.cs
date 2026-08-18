@@ -18,7 +18,8 @@ namespace RestoryQOL.Mods
     /// Holding SHIFT while releasing a dragged part skips the need to aim at
     /// the matching station and routes the part by its condition instead:
     /// broken parts go to the shredder (falls back to the trash can), dirty
-    /// parts go to the ultrasonic bath (falls back to the manual cleaner),
+    /// parts go to the ultrasonic bath (with the manual cleaner as fallback,
+    /// unless QuickDisposeManualCleaner routes them there directly),
     /// and everything else goes to the parts box. Vanilla drag-and-drop onto
     /// a station still works when SHIFT is up. Routing the last part off a
     /// device removes the now-empty device box, matching a vanilla drop.
@@ -124,10 +125,9 @@ namespace RestoryQOL.Mods
         /// only needs soldering goes straight to the soldering station, since
         /// the bath would leave it scorched.
         ///
-        /// If the player has used a manual cleaning tool (brush, air blower, ...)
-        /// recently, AutoTool remembers it: prefer the manual cleaner over the
-        /// bath, since the player evidently cleans by hand. Only favour the bath
-        /// when no manual tool was ever used.
+        /// With QuickDisposeManualCleaner on, dirty parts skip the bath and go
+        /// straight to the manual cleaner instead (AutoTool then re-selects the
+        /// last-used brush/air tool there).
         /// </summary>
         private static void RouteDirty(Traverse inst, DraggingDisassembleState state, ElementBase element)
         {
@@ -139,7 +139,7 @@ namespace RestoryQOL.Mods
             // reflectively (same approach as AutoTool's out-parameter calls).
             var needsCleaning = cleaningData != null && !IsFullyCleaned(cleaningData);
 
-            if (needsCleaning && AutoTool.LastCleaningTool == null)
+            if (needsCleaning && !Core.QuickDisposeManualCleaner.Value)
             {
                 var ultrasonic = inst.Field("ultrasonicService").GetValue<UltrasonicService>();
                 bool bathOk = false;
