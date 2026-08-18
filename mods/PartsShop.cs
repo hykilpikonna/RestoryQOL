@@ -113,19 +113,40 @@ namespace RestoryQOL.Mods
                 var productsListParent = Traverse.Create(panelView).Field("productsListParent").GetValue() as RectTransform;
                 if (productsListParent == null) return;
 
-                // Is this a single-device (model) view? If so the filtered list maps
-                // one-to-one to the device's ordered parts.
+                // Is this a single-device (model) view? deviceModels is a list of
+                // model name keys that ALWAYS starts with the "all models" entry,
+                // so a single selected model means the dropdown index is >= 1
+                // (index 0 = all models). The old count==1 check never matched
+                // because deviceModels has >= 2 entries whenever the category
+                // contains any devices, so the sort silently did nothing.
                 var filterView = filterTraverse.Field("view").GetValue();
                 if (filterView == null) return;
-                var modelCount = GetCountOfIList(filterTraverse.Field("deviceModels").GetValue());
-                var isSingleDevice = modelCount == 1;
+                var selectedModelIndex = Traverse.Create(filterView).Property("SelectedModelIndex").GetValue<int>();
+                var isSingleDevice = selectedModelIndex >= 1;
 
                 HashSet<object> missingElements = null;
                 if (Core.HighlightMissingParts.Value)
                     missingElements = CollectMissingElements(container, device);
 
-                if (Core.SortPartsByNotebook.Value && isSingleDevice && modelCount == 1)
-                    SortProductsToNotebookOrder(productsListParent, filter, deviceOrderedParts);
+                if (Core.SortPartsByNotebook.Value && isSingleDevice)
+                {
+                    // Prefer the ORDER of the model the player actually selected,
+                    // so the sort also works for a device other than the one being
+                    // worked on; fall back to the placed device's order.
+                    var selectedDeviceOrder = GetSelectedDeviceElementsOrder(filter, selectedModelIndex);
+                    var order = selectedDeviceOrder != null && selectedDeviceOrder.Count > 0
+                        ? selectedDeviceOrder
+                        : deviceOrderedParts;
+                    if (order != null && order.Count > 0)
+                    {
+                        SortProductsToNotebookOrder(productsListParent, filter, order);
+                        Core.Log.Msg($"[PartsShop] Sorted shop to notebook order (model idx {selectedModelIndex}, {order.Count} parts).");
+                    }
+                    else
+                    {
+                        Core.Log.Msg("[PartsShop] Sort skipped: no element order available for the selected model.");
+                    }
+                }
 
                 if (missingElements is { Count: > 0 })
                     HighlightMissingProducts(productsListParent, filter, missingElements);
@@ -134,6 +155,36 @@ namespace RestoryQOL.Mods
             {
                 Core.Log.Warning($"[PartsShop] {ex}");
             }
+        }
+
+        /// <summary>
+        /// Resolves the ElementInfo order of the device model currently selected
+        /// in the shop's model dropdown. deviceModels holds raw NameLocalizationKey
+        /// values (index 0 = "all models"), so we look the key up in the filter's
+        /// device list and return that device's Elements in notebook order.
+        /// Returns null when the selection is "all models" or not resolvable.
+        /// </summary>
+        private static List<object> GetSelectedDeviceElementsOrder(object filter, int selectedModelIndex)
+        {
+            var deviceModels = Traverse.Create(filter).Field("deviceModels").GetValue() as IList;
+            if (deviceModels == null || selectedModelIndex < 0 || selectedModelIndex >= deviceModels.Count)
+                return null;
+            var modelKey = deviceModels[selectedModelIndex] as string;
+            if (string.IsNullOrEmpty(modelKey)) return null;
+
+            var devices = Traverse.Create(filter).Field("devices").GetValue() as IEnumerable;
+            if (devices == null) return null;
+            foreach (var device in devices)
+            {
+                if (device == null) continue;
+                var nameKey = Traverse.Create(device).Property("NameLocalizationKey").GetValue() as string;
+                if (nameKey != null && nameKey == modelKey &&
+                    Traverse.Create(device).Property("Elements").GetValue() is IEnumerable elements)
+                {
+                    return (from object it in elements where it != null select it).ToList();
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -178,13 +229,16 @@ namespace RestoryQOL.Mods
             }
 
             // Stable sort: parts in notebook order first, then unmatched items
-            // in their original (price-sorted) order.
+            // in their original (price-sorted) order. NOTE: the notebook lists a
+            // device's sockets in REVERSE DeviceInfo.Elements order (Device.cs
+            // InitSortedSockets sorts descending), so a higher order key renders
+            // higher up in the notebook -- we must sort keys descending to match.
             orderAndIndex.Sort((a, b) =>
             {
                 if (a.Key == b.Key) return a.Value.CompareTo(b.Value);
                 if (a.Key == -1) return 1;
                 if (b.Key == -1) return -1;
-                return a.Key.CompareTo(b.Key);
+                return b.Key.CompareTo(a.Key);
             });
 
             // Re-sibling in the new order (SetAsLastSibling preserves layout order).
@@ -317,12 +371,5 @@ namespace RestoryQOL.Mods
             }
             else if (overlay != null) UnityEngine.Object.Destroy(overlay.gameObject);
         }
-
-        private static int GetCountOfIList(object value) => value switch
-        {
-            IList list => list.Count,
-            ICollection collection => collection.Count,
-            _ => -1
-        };
     }
 }
