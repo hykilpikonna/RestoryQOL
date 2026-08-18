@@ -120,6 +120,8 @@ namespace RestoryQOL
         {
             GUILayout.BeginVertical();
 
+            GUILayout.Label("Press F8 to close", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Italic, alignment = TextAnchor.MiddleCenter });
+
             GUILayout.Label("--- Cheats ---", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
             NoDeduction.Value = GUILayout.Toggle(NoDeduction.Value, " Bypass wallet deduction");
             InfiniteMoney.Value   = GUILayout.Toggle(InfiniteMoney.Value,   " Infinite money");
