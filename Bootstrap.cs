@@ -7,6 +7,12 @@ using MelonLoader;
 
 [assembly: MelonInfo(typeof(RestoryQOL.MelonLoaderBootstrap), "RestoryQOL", "1.0.0", "Azalea", null)]
 [assembly: MelonGame("Mandragora", "Restory")]
+// MelonLoader auto-patches every [HarmonyPatch] class during HarmonyInit, which
+// runs BEFORE OnInitializeMelon. Core.Log is not set yet, so any TargetMethod
+// that logs throws a NullReferenceException, and the attribute-based patches
+// end up applied twice (auto-patch + Core.Initialize's CreateAndPatchAll).
+// All patches are registered explicitly in Core.Initialize instead.
+[assembly: MelonLoader.HarmonyDontPatchAll]
 
 namespace RestoryQOL
 {
