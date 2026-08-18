@@ -25,6 +25,13 @@ namespace RestoryQOL.Mods
         private static MethodInfo _needsSolderingMethod;
 
         /// <summary>
+        /// The last manually selected cleaning tool (brush, air blower, ...),
+        /// or null if the player has never used one. Used by QuickDispose to
+        /// decide between the manual cleaner and the ultrasonic bath.
+        /// </summary>
+        public static CleaningToolInfo LastCleaningTool => _lastCleaningTool;
+
+        /// <summary>
         /// Remembers every cleaning tool the player (or the game) selects, so
         /// the memory survives the selection later switching to the soldering iron.
         /// </summary>

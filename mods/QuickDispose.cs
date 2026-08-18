@@ -123,6 +123,11 @@ namespace RestoryQOL.Mods
         /// to the ultrasonic bath (which only cleans), but a clean part that
         /// only needs soldering goes straight to the soldering station, since
         /// the bath would leave it scorched.
+        ///
+        /// If the player has used a manual cleaning tool (brush, air blower, ...)
+        /// recently, AutoTool remembers it: prefer the manual cleaner over the
+        /// bath, since the player evidently cleans by hand. Only favour the bath
+        /// when no manual tool was ever used.
         /// </summary>
         private static void RouteDirty(Traverse inst, DraggingDisassembleState state, ElementBase element)
         {
@@ -134,7 +139,7 @@ namespace RestoryQOL.Mods
             // reflectively (same approach as AutoTool's out-parameter calls).
             var needsCleaning = cleaningData != null && !IsFullyCleaned(cleaningData);
 
-            if (needsCleaning)
+            if (needsCleaning && AutoTool.LastCleaningTool == null)
             {
                 var ultrasonic = inst.Field("ultrasonicService").GetValue<UltrasonicService>();
                 bool bathOk = false;
