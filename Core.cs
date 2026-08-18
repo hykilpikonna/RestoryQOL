@@ -29,6 +29,7 @@ namespace RestoryQOL
         public static BoolEntry SnapToSocket;
         public static BoolEntry QuickDispose;
         public static BoolEntry QuickDisposeManualCleaner;
+        public static BoolEntry GatherParts;
         public static BoolEntry RefreshMarketplace;
         public static BoolEntry CountUltrasonicInNotebook;
 
@@ -70,6 +71,7 @@ namespace RestoryQOL
             SnapToSocket         = config.CreateBool("SnapToSocket",         true,  "Hold ALT to snap a dropped part into its socket");
             QuickDispose         = config.CreateBool("QuickDispose",         true,  "Hold SHIFT on drop: broken->shredder, dirty->cleaner, good->parts box");
             QuickDisposeManualCleaner = config.CreateBool("QuickDisposeManualCleaner", false, "Shift-drop dirty parts to the manual cleaner (brush/air) instead of the ultrasonic bath");
+            GatherParts          = config.CreateBool("GatherParts",          true,  "Press G to gather loose parts onto the mat");
             RefreshMarketplace   = config.CreateBool("RefreshMarketplace",   true,  "Press CTRL+R to refresh the device shop marketplace");
             CountUltrasonicInNotebook = config.CreateBool("CountUltrasonicInNotebook", true,  "Parts in the ultrasonic count as on-surface in the notebook");
             config.Save();
@@ -103,6 +105,7 @@ namespace RestoryQOL
             }
             Mods.AutoScrew.Run();
             Mods.RefreshMarketplace.Run();
+            Mods.GatherParts.Run();
         }
 
         public static void DrawGUI()
@@ -146,6 +149,7 @@ namespace RestoryQOL
             QuickDispose.Value = GUILayout.Toggle(QuickDispose.Value, " Hold SHIFT on drop: auto-route part by condition");
             QuickDisposeManualCleaner.Value = GUILayout.Toggle(QuickDisposeManualCleaner.Value, " Shift-drop dirty parts to manual cleaner, not the ultrasonic");
             RefreshMarketplace.Value = GUILayout.Toggle(RefreshMarketplace.Value, " CTRL+R: refresh marketplace");
+            GatherParts.Value = GUILayout.Toggle(GatherParts.Value, " G: gather loose parts onto the mat");
             AutoScrew.Value = GUILayout.Toggle(AutoScrew.Value, " Hold Z: screw in all / X: unscrew all");
 
             GUILayout.Space(8f);
