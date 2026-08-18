@@ -23,6 +23,7 @@ Just made this mod to make the game faster-paced using some QoL improvements (an
 * Auto-open the parts page for the placed device
 * Sort the parts shop to match the notebook's part order
 * Sort the parts box by device, then assembly order
+* Count parts sitting in the ultrasonic bath as "on surface" in the notebook, so they aren't marked as missing parts
 * Auto-select the right tool: last used cleaning tool for dirty parts, soldering iron for scorched parts
 * Block the ad banners on the in-game browser's shop pages
 

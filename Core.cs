@@ -29,6 +29,7 @@ namespace RestoryQOL
         public static BoolEntry SnapToSocket;
         public static BoolEntry QuickDispose;
         public static BoolEntry RefreshMarketplace;
+        public static BoolEntry CountUltrasonicInNotebook;
 
         #endregion
 
@@ -68,6 +69,7 @@ namespace RestoryQOL
             SnapToSocket         = config.CreateBool("SnapToSocket",         true,  "Hold ALT to snap a dropped part into its socket");
             QuickDispose         = config.CreateBool("QuickDispose",         true,  "Hold SHIFT on drop: broken->shredder, dirty->cleaner, good->parts box");
             RefreshMarketplace   = config.CreateBool("RefreshMarketplace",   true,  "Press CTRL+R to refresh the device shop marketplace");
+            CountUltrasonicInNotebook = config.CreateBool("CountUltrasonicInNotebook", true,  "Parts in the ultrasonic count as on-surface in the notebook");
             config.Save();
 
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.InfinityMoney));
@@ -84,6 +86,7 @@ namespace RestoryQOL
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.AdBlock));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.SnapToSocket));
             HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.QuickDispose));
+            HarmonyLib.Harmony.CreateAndPatchAll(typeof(Mods.UltrasonicNotebookPatch));
 
             _visible = MenuEnabled.Value;
             Log.Msg("Initialized. Press F8 to toggle the menu.");
@@ -129,6 +132,7 @@ namespace RestoryQOL
             AutoPartsPage.Value       = GUILayout.Toggle(AutoPartsPage.Value,       " Auto-open parts for placed device");
             SortPartsByNotebook.Value = GUILayout.Toggle(SortPartsByNotebook.Value, " Sort parts shop by notebook order");
             SortBoxParts.Value         = GUILayout.Toggle(SortBoxParts.Value,        " Sort parts box by device/assembly order");
+            CountUltrasonicInNotebook.Value = GUILayout.Toggle(CountUltrasonicInNotebook.Value, " Count ultrasonic parts in notebook");
             AutoTool.Value = GUILayout.Toggle(AutoTool.Value, " Auto-select tool (dirty: last cleaner, scorched: iron)");
             AdBlock.Value = GUILayout.Toggle(AdBlock.Value, " Block ad banners on shop pages");
             
