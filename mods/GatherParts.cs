@@ -4,6 +4,7 @@ using System.Linq;
 using HarmonyLib;
 using Restory.Data.Elements;
 using Restory.Gameplay.Elements;
+using Restory.Gameplay.Equipment.Ultrasonic;
 using Restory.Gameplay.Workplace;
 using UnityEngine;
 
@@ -11,9 +12,10 @@ namespace RestoryQOL.Mods
 {
     /// <summary>
     /// Press G to gather every loose part on the work surface back onto the
-    /// mat. The game only auto-rescues a part that lands outside the mat when
-    /// the detection state (re)opens, and never in competitions, so a part can
-    /// get stuck out of reach.
+    /// mat, including parts sitting in the ultrasonic bath. The game only
+    /// auto-rescues a part that lands outside the mat when the detection state
+    /// (re)opens, and never in competitions, so a part can get stuck out of
+    /// reach.
     ///
     /// Uses the game's own placement system (ElementPlacementController +
     /// PlacementPositionFinder) to find free spots: each part is placed at an
@@ -59,14 +61,36 @@ namespace RestoryQOL.Mods
                 return;
             }
 
+            // The ultrasonic bath removes a part from the surface while it is
+            // inside, so it never shows up in the surface scan. Take those parts
+            // out first and fold them into the gather so G rescues them too.
+            var bathParts = new List<ElementBase>();
+            var bath = UnityEngine.Object.FindAnyObjectByType<SonicBath>();
+            if (bath != null && bath.InsertedElements != null)
+            {
+                // Snapshot the keys first: TryRetrieveElement mutates the
+                // underlying dictionary, so enumerating it directly would
+                // throw "Collection was modified".
+                var inserted = bath.InsertedElements.Keys.ToList();
+                foreach (var element in inserted)
+                {
+                    if (element == null || element.Info.Category == ElementCategory.Small) continue;
+                    if (bath.TryRetrieveElement(element))
+                        bathParts.Add(element);
+                    else
+                        Core.Log.Warning($"[GatherParts] Could not retrieve {element.Info.ID} from the ultrasonic bath; left inside.");
+                }
+            }
+
             var elements = surface.PlacedElements
                 .Where(element => element != null
                     && !element.IsDragging
                     && element.Info.Category != ElementCategory.Small) // screws, not parts
+                .Concat(bathParts.Where(element => !surface.PlacedElements.Contains(element)))
                 .ToList();
             if (elements.Count == 0)
             {
-                Core.Log.Msg("[GatherParts] No loose parts on the surface (screws are ignored).");
+                Core.Log.Msg("[GatherParts] No loose parts on the surface or in the ultrasonic bath (screws are ignored).");
                 return;
             }
 

@@ -1,7 +1,5 @@
 ﻿# Azalea's Restory QoL Mod
 
-Happy launch day!
-
 Just made this mod to make the game faster-paced using some QoL improvements (and some bug fixes for the game since it just launched)
 
 <img src="docs/menu.png" alt="screenshot of the main menu">
@@ -31,7 +29,7 @@ Just made this mod to make the game faster-paced using some QoL improvements (an
 
 * Hold ALT: snap a dropped part straight into its socket
 * Hold SHIFT on drop: route the part by condition (broken → shredder, dirty → ultrasonic bath, good → parts box)
-* Press G: gather every loose part on the work surface back into a tidy grid on the mat (rescues parts stuck out of reach)
+* Press G: gather every loose part on the work surface (and in the ultrasonic bath) back into a tidy grid on the mat (rescues parts stuck out of reach)
 * CTRL+R: refresh the marketplace
 * Hold Z to screw in all visible loose screws, hold X to unscrew them all
 
