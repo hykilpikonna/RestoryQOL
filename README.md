@@ -85,3 +85,13 @@ Below are some screenshots of the features
 <img src="docs/sort-parts-box-1.png" alt="screenshot of parts box sorted" width="600">
 <img src="docs/sort-parts-box-2.png" alt="screenshot of parts box sorted" width="600">
 </details>
+
+<details>
+<summary>Ultrasonic items show up in notebook</summary>
+<img src="docs/ultrasonic-items.png" alt="screenshot of ultrasonic items in the notebook" width="600">
+</details>
+
+<details>
+<summary>Press G to gather parts</summary>
+<img src="docs/gather-parts.png" alt="screenshot of parts being gathered with the G key" width="600">
+</details>
