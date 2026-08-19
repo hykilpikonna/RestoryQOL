@@ -1,0 +1,56 @@
+Happy launch day!
+
+Just made this mod to make the game faster-paced using some QoL improvements (and some bug fixes for the game since it just launched)
+
+[size=4][b]Features[/b][/size]
+
+[b]Cheats[/b]
+[list]
+[*]Bypass wallet deduction
+[*]Infinite money
+[*]Reset the competition timer when a competition attempt fails
+[*]Ultrasonic cleaner finishes instantly
+[/list]
+
+[b]QoL Improvements[/b]
+[list]
+[*]Skip startup logos
+[*]Start with the menu open
+[*]Highlight parts missing from the current device (in the parts shop)
+[*]Auto-open the parts page for the placed device
+[*]Sort the parts shop to match the notebook's part order
+[*]Sort the parts box by device, then assembly order
+[*]Count parts sitting in the ultrasonic bath as "on surface" in the notebook, so they aren't marked as missing parts
+[*]Auto-select the right tool: last used cleaning tool for dirty parts, soldering iron for scorched parts
+[*]Block the ad banners on the in-game browser's shop pages
+[/list]
+
+[b]Hot Keys[/b]
+[list]
+[*]Hold ALT: snap a dropped part straight into its socket
+[*]Hold SHIFT on drop: route the part by condition (broken to the shredder, dirty to the ultrasonic bath, good to the parts box)
+[*]Press G: gather every loose part on the work surface (and in the ultrasonic bath) back into a tidy grid on the mat (rescues parts stuck out of reach)
+[*]CTRL+R: refresh the marketplace
+[*]Hold Z to screw in all visible loose screws, hold X to unscrew them all
+[/list]
+
+[b]Bug Fixes[/b]
+[list]
+[*]Fix the game hangs for ~20 seconds every time I save - fixed by game update
+[/list]
+
+[size=4][b]Installation[/b][/size]
+
+[b]Using MelonLoader (Recommended)[/b]
+[list=1]
+[*]Install [url=https://melonwiki.xyz]MelonLoader[/url]
+[*]Download the Latest Release and put the dll in the [font=Courier New]Mods[/font] folder in game files
+[*]Launch the game
+[/list]
+
+[b]Using BepInEx 6[/b]
+[list=1]
+[*]Install [url=https://docs.bepinex.dev/articles/user_guide/installation/index.html#where-to-download-bepinex]BepInEx 6[/url]. Make sure you download "bleeding-edge build" from BepisBuilds. The BepInEx 5.4 or 6.0.0-pre.2 from Github Actions is too old and doesn't support Unity 6000!!!
+[*]Download the Latest Release and put the dll in the [font=Courier New]BepInEx/plugins[/font] folder in game files
+[*]Launch the game
+[/list]
