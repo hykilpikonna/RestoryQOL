@@ -65,6 +65,7 @@ jobs:
             "libs/Managed/UnityEngine.CoreModule.dll"
             "libs/Managed/UnityEngine.IMGUIModule.dll"
             "libs/Managed/UnityEngine.InputLegacyModule.dll"
+            "libs/Managed/UnityEngine.PhysicsModule.dll"
             "libs/Managed/UnityEngine.TextRenderingModule.dll"
             "libs/Managed/UnityEngine.UI.dll"
             "libs/Managed/Sirenix.Serialization.dll"
