@@ -42,7 +42,7 @@ namespace RestoryQOL
     /// <summary>
     /// BepInEx entry point. Installed with BepInEx; ignored by MelonLoader.
     /// </summary>
-    [BepInPlugin("aza.restoryqol", "RestoryQOL", "1.0.0")]
+    [BepInPlugin("aza.restoryqol", "RestoryQOL", "1.0.1")]
     public class BepInExBootstrap : BaseUnityPlugin
     {
         private void Awake()
